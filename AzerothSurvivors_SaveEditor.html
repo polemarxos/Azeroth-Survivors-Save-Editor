@@ -1,0 +1,443 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Azeroth Survivors Save Editor</title>
+<style>
+:root{
+  --bg:#eef1f4; --panel:#ffffff; --ink:#1d2733; --muted:#5b6876; --line:#cfd6de;
+  --accent:#1f6f8b; --accent-ink:#ffffff; --warn:#a14b00; --warn-bg:#fff2e0; --ok:#1b6b3a; --ok-bg:#e3f4e9; --bad:#a3262a; --bad-bg:#fde8e8;
+  color-scheme: light;
+}
+@media (prefers-color-scheme: dark){
+  :root{ --bg:#14191f; --panel:#1c232b; --ink:#e6ebf0; --muted:#95a3b1; --line:#33404d; --accent:#4fb0cf; --accent-ink:#0b1a22;
+    --warn:#f0b36b; --warn-bg:#3a2a14; --ok:#7fd59d; --ok-bg:#16301f; --bad:#ff9b9e; --bad-bg:#3a1a1c; color-scheme: dark; }
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.5 "Segoe UI",system-ui,-apple-system,sans-serif}
+main{max-width:920px;margin:0 auto;padding:28px 18px 80px}
+h1{font-size:26px;margin:0 0 4px;letter-spacing:-.01em}
+h2{font-size:17px;margin:0 0 12px}
+p{margin:0 0 10px}
+.sub{color:var(--muted);margin-bottom:22px}
+.panel{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:18px;margin-bottom:16px}
+.drop{border:2px dashed var(--line);border-radius:10px;padding:30px;text-align:center;background:var(--panel);cursor:pointer}
+.drop.over{border-color:var(--accent);background:var(--ok-bg)}
+.drop strong{display:block;font-size:17px;margin-bottom:4px}
+button,.btn{font:inherit;border:1px solid var(--line);background:var(--panel);color:var(--ink);padding:8px 14px;border-radius:7px;cursor:pointer}
+button:hover{border-color:var(--accent)}
+button.primary{background:var(--accent);color:var(--accent-ink);border-color:var(--accent);font-weight:600}
+button.small{padding:3px 9px;font-size:13px}
+button:focus-visible,input:focus-visible,textarea:focus-visible,select:focus-visible{outline:3px solid var(--accent);outline-offset:1px}
+input[type=text],input[type=number],textarea{font:inherit;color:var(--ink);background:var(--bg);border:1px solid var(--line);border-radius:6px;padding:6px 8px;width:100%}
+textarea{font-family:Consolas,"Courier New",monospace;font-size:13px;min-height:340px;line-height:1.45}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(190px,1fr));gap:12px}
+label.f{display:block;font-size:13px;color:var(--muted)}
+label.f input{margin-top:3px;color:var(--ink)}
+.status{padding:10px 12px;border-radius:8px;margin-bottom:14px;font-size:14px}
+.status.ok{background:var(--ok-bg);color:var(--ok)}
+.status.warn{background:var(--warn-bg);color:var(--warn)}
+.status.bad{background:var(--bad-bg);color:var(--bad)}
+.tabs{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:14px}
+.tabs button[aria-selected=true]{background:var(--accent);color:var(--accent-ink);border-color:var(--accent)}
+.cls{display:grid;grid-template-columns:150px 1fr auto;gap:12px;align-items:center;padding:9px 0;border-top:1px solid var(--line)}
+.cls:first-of-type{border-top:0}
+.cls .nm{font-weight:600}
+.cls .meta{color:var(--muted);font-size:13px}
+input[type=range]{width:100%}
+.row{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.perk{display:grid;grid-template-columns:1fr 90px auto;gap:8px;align-items:center;margin-bottom:6px}
+.hide{display:none}
+.bar{position:sticky;bottom:0;background:var(--bg);border-top:1px solid var(--line);padding:12px 18px;margin:0 -18px}
+small{color:var(--muted)}
+code{background:var(--bg);padding:1px 5px;border-radius:4px;font-size:13px}
+</style>
+</head>
+<body>
+<main>
+  <h1>Azeroth Survivors Save Editor</h1>
+  <p class="sub">Opens a save file, lets you change it, and writes a new one the game will accept. Everything runs in this page. Your file is never uploaded.</p>
+
+  <div id="loader" class="drop" tabindex="0" role="button" aria-label="Choose a save file">
+    <strong>Drop a save file here, or click to choose one</strong>
+    <span class="sub">Works with exported <code>.sav</code> files and with <code>characters.txt</code> (in <code>%APPDATA%\wenilla-rogue</code>)</span>
+    <input id="file" type="file" class="hide" accept=".sav,.txt,*/*">
+  </div>
+
+  <div id="editor" class="hide">
+    <div id="status"></div>
+
+    <div class="tabs" role="tablist">
+      <button role="tab" aria-selected="true" data-tab="basic">Totals &amp; zones</button>
+      <button role="tab" aria-selected="false" data-tab="perks">Perks &amp; collection</button>
+      <button role="tab" aria-selected="false" data-tab="heroes">Heroes, talents &amp; gear</button>
+      <button role="tab" aria-selected="false" data-tab="coll">Pets, tabards &amp; achievements</button>
+      <button role="tab" aria-selected="false" data-tab="codex">Codex (rings, amulets)</button>
+      <button role="tab" aria-selected="false" data-tab="raw">Raw text (everything)</button>
+    </div>
+
+    <section id="tab-basic">
+      <div class="panel">
+        <h2>Totals</h2>
+        <div id="stats" class="grid"></div>
+      </div>
+      <div class="panel">
+        <h2>Zones cleared per class</h2>
+        <p><small>Zones are cleared in order. The next zone opens automatically (the game stores this as “unlocked”).</small></p>
+        <div id="classes"></div>
+        <div class="row" style="margin-top:12px">
+          <button id="clearAll">Mark all zones cleared for every class</button>
+        </div>
+      </div>
+    </section>
+
+    <section id="tab-perks" class="hide">
+      <div class="panel">
+        <h2>Perk levels</h2>
+        <div id="perks"></div>
+        <p><small>Keep levels close to what you already have. A level above the game’s own maximum may be ignored or misbehave.</small></p>
+      </div>
+      <div class="panel">
+        <h2>Collection</h2>
+        <div class="grid">
+          <label class="f">Talent respecs used<input id="resets" type="number" min="0"></label>
+        </div>
+        <label class="f" style="margin-top:12px">Pets (comma-separated)<input id="pets" type="text"></label>
+        <label class="f" style="margin-top:12px">Tabard looks (comma-separated)<input id="tabard" type="text"></label>
+      </div>
+    </section>
+
+    <section id="tab-heroes" class="hide">
+      <div class="panel">
+        <div class="row"><label class="f">Class <select id="hc"></select></label>
+          <label class="f">Talent experience <input id="hxp" type="number" min="0"></label>
+          <label class="f">Race <select id="hrace"></select></label><label class="f">Gender <select id="hgen"><option value="0">Male</option><option value="1">Female</option></select></label></div>
+        <p style="margin-top:10px"><small>Talent points come from experience. If you max every talent, also raise the experience a lot, or the game may not count all points as earned.</small></p>
+        <div class="row"><button id="xMax">Max talent experience (this class)</button><button id="xAll">Max talent experience (all classes)</button><button id="tMax">Max all talents</button><button id="tClr">Clear talents</button>
+          <button id="gCls">Collect all gear (this class)</button><button id="gAll">Collect all gear (every class)</button><button id="gEq">Equip best gear (this class)</button></div>
+        <p><small>Rogue and Shaman get 5 extra off-hand items each (IDs follow the same pattern as the rest of the gear).</small></p>
+      </div>
+      <div class="panel"><h2>Talents</h2><div id="trees"></div></div>
+    </section>
+    <section id="tab-coll" class="hide">
+      <div class="panel"><h2>Pets</h2><div id="petl" class="grid"></div></div>
+      <div class="panel"><h2>Tabards</h2><div id="tabl" class="grid"></div></div>
+      <div class="panel"><h2>Achievements</h2><p><button id="achAll">Unlock every known achievement</button></p><p><small>Adds the achievement IDs this editor knows, dated now. Others can be added in the raw text.</small></p></div>
+    </section>
+
+    <section id="tab-codex" class="hide">
+      <div class="panel"><div class="row"><button id="cxAll">Unlock whole codex</button><button id="cxNone">Clear codex</button></div>
+        <p style="margin-top:10px"><small>Each entry counts as seen at its own rarity. Legendary amulets are one per class spell.</small></p></div>
+      <div class="panel"><h2>Rings &amp; trinkets</h2><div id="cxJ" class="grid"></div></div>
+      <div class="panel"><h2>Amulets</h2><div id="cxA" class="grid"></div></div>
+      <div class="panel"><h2>Legendary amulets</h2><div id="cxL"></div></div>
+    </section>
+
+    <section id="tab-raw" class="hide">
+      <div class="panel">
+        <h2>Raw text</h2>
+        <p>This is the whole save as plain text, one record per line (<code>items</code>, <code>equip</code>, <code>talent</code>, <code>seen</code>, <code>ach</code> and so on). Edit anything, then press <strong>Apply</strong>. The fields on the other tabs update to match.</p>
+        <textarea id="raw" spellcheck="false" aria-label="Raw save text"></textarea>
+        <div class="row" style="margin-top:10px"><button id="applyRaw">Apply raw text</button><span id="rawMsg"></span></div>
+      </div>
+    </section>
+
+    <div class="bar row">
+      <button id="save" class="primary">Download edited save</button>
+      <button id="reload">Open a different file</button>
+      <small id="hint"></small>
+    </div>
+    <div class="panel" style="margin-top:14px">
+      <h2>How to use the edited file</h2>
+      <p>1. In the game open <strong>Options → Saves</strong> and note the folder it shows. 2. Put the downloaded <code>.sav</code> file in that folder. 3. Pick it in the list and press <strong>Import</strong>. The game keeps a copy of your old progress as <code>characters.before-import</code>.</p>
+      <p><small>Importing replaces all progress with the file’s contents. Keep your original export as a backup.</small></p>
+    </div>
+  </div>
+</main>
+
+<script>
+/* ---------- crypto: SHA-1 + HMAC-SHA1 (pure JS, no dependencies) ---------- */
+function sha1(msg){
+  const ml=msg.length, total=((ml+9+63)>>6)<<6, buf=new Uint8Array(total);
+  buf.set(msg); buf[ml]=0x80;
+  const dv=new DataView(buf.buffer);
+  dv.setUint32(total-8, Math.floor(ml/0x20000000)); dv.setUint32(total-4,(ml<<3)>>>0);
+  let h0=0x67452301,h1=0xEFCDAB89,h2=0x98BADCFE,h3=0x10325476,h4=0xC3D2E1F0;
+  const w=new Uint32Array(80);
+  for(let o=0;o<total;o+=64){
+    for(let i=0;i<16;i++) w[i]=dv.getUint32(o+i*4);
+    for(let i=16;i<80;i++){const x=w[i-3]^w[i-8]^w[i-14]^w[i-16]; w[i]=((x<<1)|(x>>>31))>>>0;}
+    let a=h0,b=h1,c=h2,d=h3,e=h4;
+    for(let i=0;i<80;i++){
+      let f,k;
+      if(i<20){f=(b&c)|(~b&d);k=0x5A827999}
+      else if(i<40){f=b^c^d;k=0x6ED9EBA1}
+      else if(i<60){f=(b&c)|(b&d)|(c&d);k=0x8F1BBCDC}
+      else{f=b^c^d;k=0xCA62C1D6}
+      const t=((((a<<5)|(a>>>27))+f+e+k+w[i])>>>0);
+      e=d;d=c;c=((b<<30)|(b>>>2))>>>0;b=a;a=t;
+    }
+    h0=(h0+a)>>>0;h1=(h1+b)>>>0;h2=(h2+c)>>>0;h3=(h3+d)>>>0;h4=(h4+e)>>>0;
+  }
+  const out=new Uint8Array(20), ov=new DataView(out.buffer);
+  [h0,h1,h2,h3,h4].forEach((v,i)=>ov.setUint32(i*4,v));
+  return out;
+}
+function cat(...p){let n=0;p.forEach(x=>n+=x.length);const o=new Uint8Array(n);let i=0;p.forEach(x=>{o.set(x,i);i+=x.length});return o}
+const KEY=cat(new TextEncoder().encode("azeroth-survivors/save/v1/"),
+  Uint8Array.from("9c4e27d16af013b85de2710ca936c48f".match(/../g).map(h=>parseInt(h,16))));
+function hmacSha1(key,msg){
+  const k=new Uint8Array(64); k.set(key);
+  const ip=k.map(b=>b^0x36), op=k.map(b=>b^0x5c);
+  return sha1(cat(op,sha1(cat(ip,msg))));
+}
+const ENC=new TextEncoder(), DEC=new TextDecoder('utf-8',{fatal:true});
+function le64(i){const o=new Uint8Array(8);new DataView(o.buffer).setUint32(0,i>>>0,true);new DataView(o.buffer).setUint32(4,Math.floor(i/4294967296),true);return o}
+function keystream(header,n){
+  const out=new Uint8Array(Math.ceil(n/20)*20+20);
+  for(let i=0,p=0;p<n;i++,p+=20) out.set(hmacSha1(KEY,cat(ENC.encode("ks"),header,le64(i))),p);
+  return out.subarray(0,n);
+}
+function b64dec(s){const bin=atob(s.replace(/\s+/g,''));const o=new Uint8Array(bin.length);for(let i=0;i<bin.length;i++)o[i]=bin.charCodeAt(i);return o}
+function b64enc(u){let s='';for(let i=0;i<u.length;i+=0x8000)s+=String.fromCharCode.apply(null,u.subarray(i,i+0x8000));return btoa(s)}
+function unseal(text){
+  text=text.trim();
+  if(!text.startsWith("RSE1:")) throw new Error("This is not a sealed Azeroth Survivors save (it should start with RSE1:).");
+  const raw=b64dec(text.slice(5));
+  if(raw.length<36) throw new Error("The file is too short to be a save.");
+  const header=raw.subarray(0,16), ct=raw.subarray(16,raw.length-20), tag=raw.subarray(raw.length-20);
+  const want=hmacSha1(KEY,cat(ENC.encode("tag"),header,ct));
+  let ok=true; for(let i=0;i<20;i++) if(want[i]!==tag[i]) ok=false;
+  const ks=keystream(header,ct.length), pt=new Uint8Array(ct.length);
+  for(let i=0;i<ct.length;i++) pt[i]=ct[i]^ks[i];
+  return {text:DEC.decode(pt), ok};
+}
+function seal(plain,header){
+  header=header||crypto.getRandomValues(new Uint8Array(16));
+  const pt=ENC.encode(plain), ks=keystream(header,pt.length), ct=new Uint8Array(pt.length);
+  for(let i=0;i<pt.length;i++) ct[i]=pt[i]^ks[i];
+  const tag=hmacSha1(KEY,cat(ENC.encode("tag"),header,ct));
+  return "RSE1:"+b64enc(cat(header,ct,tag));
+}
+
+/* ---------- save model ---------- */
+const ZONES=["elwynn","duskwood","wsg","ab","feralas","arena","av","brm","aq"];
+const ZONE_NAMES={elwynn:"Elwynn Forest",duskwood:"Duskwood",wsg:"Warsong Gulch",ab:"Arathi Basin",feralas:"Feralas",arena:"Arena",av:"Alterac Valley",brm:"Blackrock Mountain",aq:"Ahn'Qiraj"};
+const CLASS_NAMES={1:"Warrior",2:"Paladin",3:"Hunter",4:"Rogue",5:"Priest",6:"Death Knight",7:"Shaman",8:"Mage",9:"Warlock",11:"Druid"};
+const KNOWN_KEYS=["pick","unlock","items","equip","look","talent","seen","ach","achat","stat","beat","perk","tabard","pets","resets","hero"];
+const STAT_LABELS={kills:"Kills",gold:"Gold",guardians:"Guardians slain",bosses:"Bosses slain",runs:"Runs",wins:"Wins",caches:"Caches opened"};
+
+let L=[];            // the save, one string per line
+let fileName="";
+
+const $=id=>document.getElementById(id);
+const key=l=>l.split('|')[0];
+const find=(k,cls)=>L.findIndex(l=>{const p=l.split('|');return p[0]===k&&(cls===undefined||p[1]===String(cls))});
+function kvParse(s){return s===""?[]:s.split(',').map(x=>{const i=x.search(/[=:]/);return [x.slice(0,i),x.slice(i+1),x[i]]})}
+function setLine(k,cls,rest){ // rest = text after "k|cls|" (or after "k|" if cls undefined)
+  const line=cls===undefined?`${k}|${rest}`:`${k}|${cls}|${rest}`;
+  const i=find(k,cls);
+  if(i>=0) L[i]=line; else { const end=L.length&&L[L.length-1]===""?L.length-1:L.length; L.splice(end,0,line); }
+}
+function removeLine(k,cls){const i=find(k,cls);if(i>=0)L.splice(i,1)}
+const RACES={1:"Human",2:"Orc",3:"Dwarf",4:"Night Elf",5:"Undead",6:"Tauren",7:"Gnome",8:"Troll"};
+const CLASS_RACES={1:[1,2,3,4,5,6,7,8],2:[1,3],3:[2,3,4,6,8],4:[1,2,3,4,5,7,8],5:[1,3,4,5,8],7:[2,6,8],8:[1,5,7,8],9:[1,2,5,7],11:[4,6]};
+function ensureHero(c){
+  if(find("hero",c)<0) setLine("hero",c,CLASS_RACES[c][0]+"|0|0,0,0,0,0");
+  if(find("unlock",c)<0) setLine("unlock",c,"1");
+}
+function classIds(){return CLS_ORDER.slice()}
+function classIdsOld(){
+  const s=new Set();
+  L.forEach(l=>{const p=l.split('|'); if(["hero","unlock","beat","talent","equip"].includes(p[0])&&/^\d+$/.test(p[1]||""))s.add(+p[1])});
+  return [...s].sort((a,b)=>a-b);
+}
+function clearedCount(cls){
+  const i=find("beat",cls); if(i<0) return 0;
+  const set=new Set((L[i].split('|')[2]||"").split(',').filter(Boolean));
+  let n=0; while(n<ZONES.length&&set.has(ZONES[n])) n++; return n;
+}
+function setCleared(cls,n){
+  ensureHero(cls);
+  if(n>0) setLine("beat",cls,ZONES.slice(0,n).join(',')); else removeLine("beat",cls);
+  setLine("unlock",cls,String(Math.min(ZONES.length,n+1)));
+}
+
+/* ---------- UI ---------- */
+function status(kind,msg){$("status").innerHTML=`<div class="status ${kind}">${msg}</div>`}
+function syncRaw(){ $("raw").value=L.join('\n') }
+function render(){
+  syncRaw();
+  // totals
+  const si=find("stat"); const stats=si>=0?kvParse(L[si].split('|')[1]||""):[];
+  $("stats").innerHTML=stats.map(([k,v])=>`<label class="f">${STAT_LABELS[k]||k}<input type="number" min="0" data-stat="${k}" value="${v}"></label>`).join('')||"<p>No totals found in this save.</p>";
+  $("stats").querySelectorAll("input").forEach(inp=>inp.addEventListener("change",()=>{
+    const cur=kvParse(L[find("stat")].split('|')[1]||"");
+    const m=cur.map(([k,v,sep])=>`${k}=${k===inp.dataset.stat?String(Math.max(0,Math.floor(+inp.value||0))):v}`).join(',');
+    setLine("stat",undefined,m); syncRaw();
+  }));
+  // classes
+  $("classes").innerHTML=classIds().map(c=>{
+    const n=clearedCount(c);
+    return `<div class="cls"><div class="nm">${CLASS_NAMES[c]||("Class "+c)}</div>
+      <div><input type="range" min="0" max="${ZONES.length}" value="${n}" data-cls="${c}" aria-label="Zones cleared for ${CLASS_NAMES[c]||c}"><div class="meta" id="m${c}">${zoneText(n)}</div></div>
+      <div class="meta"><span id="n${c}">${n}</span> / ${ZONES.length}</div></div>`}).join('');
+  $("classes").querySelectorAll("input").forEach(r=>r.addEventListener("input",()=>{
+    const c=r.dataset.cls,n=+r.value; setCleared(c,n);
+    $("m"+c).textContent=zoneText(n); $("n"+c).textContent=n; syncRaw();
+  }));
+  // perks
+  const pi=find("perk"); const perks=pi>=0?kvParse(L[pi].split('|')[1]||""):[];
+  $("perks").innerHTML=perks.map(([k,v])=>`<div class="perk"><span>${k.replace(/_/g,' ')}</span><input type="number" min="0" max="${PERKMAX[k]||9}" data-perk="${k}" value="${v}"><span></span></div>`).join('')||"<p>No perks in this save.</p>";
+  $("perks").querySelectorAll("input").forEach(inp=>inp.addEventListener("change",()=>{
+    const cur=kvParse(L[find("perk")].split('|')[1]||"");
+    const m=cur.map(([k,v])=>`${k}:${k===inp.dataset.perk?String(Math.max(0,Math.floor(+inp.value||0))):v}`).join(',');
+    setLine("perk",undefined,m); syncRaw();
+  }));
+  renderHeroes(); renderColl(); renderCodex();
+  // collection
+  const get=k=>{const i=find(k);return i>=0?(L[i].split('|')[1]||""):""};
+  $("resets").value=get("resets"); $("pets").value=get("pets"); $("tabard").value=get("tabard");
+}
+function zoneText(n){return n===0?"No zones cleared":n===ZONES.length?"All zones cleared":`Cleared through ${ZONE_NAMES[ZONES[n-1]]}; next: ${ZONE_NAMES[ZONES[n]]}`}
+
+function openText(text,name){
+  try{
+    const r=unseal(text); fileName=name;
+    L=r.text.split('\n');
+    $("loader").classList.add("hide"); $("editor").classList.remove("hide");
+    if(r.ok) status("ok",`Opened <strong>${escapeHtml(name)}</strong>. The seal checked out, so this is an unmodified game save.`);
+    else status("warn",`Opened <strong>${escapeHtml(name)}</strong>, but its seal did not match, so it was edited or damaged. The game would reject this file as it is. Saving here writes a fresh, valid seal.`);
+    render();
+  }catch(e){ alert("Could not open this file.\n\n"+e.message) }
+}
+const escapeHtml=s=>s.replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+
+function validate(){
+  const problems=[];
+  L.forEach((l,i)=>{ if(l==="") return;
+    const k=key(l); if(!KNOWN_KEYS.includes(k)) problems.push(`Line ${i+1} starts with “${k}”, which this game does not use.`);
+    if(l.includes('\r')) problems.push(`Line ${i+1} contains a stray carriage return.`);
+  });
+  return problems;
+}
+function download(){
+  const probs=validate();
+  if(probs.length && !confirm("Some lines look wrong:\n\n"+probs.slice(0,8).join("\n")+"\n\nSave anyway?")) return;
+  const text=L.join('\n');
+  const blob=new Blob([seal(text)],{type:"text/plain"});
+  const d=new Date(), p=n=>String(n).padStart(2,'0');
+  const name=`AzerothSurvivors_edited_${d.getFullYear()}-${p(d.getMonth()+1)}-${p(d.getDate())}_${p(d.getHours())}-${p(d.getMinutes())}-${p(d.getSeconds())}.sav`;
+  const a=document.createElement("a"); a.href=URL.createObjectURL(blob); a.download=name; document.body.appendChild(a); a.click(); a.remove();
+  $("hint").textContent=`Saved as ${name}`;
+}
+
+
+/* ---------- data read from the game files ---------- */
+const CLS_ORDER=[1,2,3,4,5,7,8,9,11];
+const TREES="imp_heroic:5,deflection:5,imp_rend:3,tactical_mastery:5,deep_wounds:1,anger_management:3,impale:3,two_hand_spec:5,sweeping_strikes:1,imp_execute:3,sword_spec:5,weapon_mastery:3,mortal_wounds:1|cruelty:5,booming_voice:5,unbridled_wrath:5,imp_battle_shout:3,rampage:1,imp_cleave:3,dual_wield_spec:5,imp_whirlwind:3,flurry:1,death_wish:3,blood_craze:3,imp_berserker:5,bladestorm:1|shield_spec:5,anticipation:5,imp_thunder_clap:3,toughness:5,heavy_shield:3,shockwave:1,imp_demo_shout:3,defiance:3,imp_shield_slam:3,shield_mastery:3,fortified:1,last_stand:1,unbreakable:3,titan:1|divine_strength:5,divine_intellect:5,healing_light:3,imp_seal:5,divine_favor:1,unyielding_faith:3,holy_power:5,lasting_judgement:3,daybreak:1,sanctified_light:5,holy_guidance:3,purifying_power:3,lights_grace:1|imp_devotion:5,redoubt:5,imp_consecration:3,spiritual_attunement:3,weighted_hammer:3,hallowed_ground:1,judgement_crusader:3,righteous_fury:3,imp_hoj:3,blessed_life:3,ardent_defender:1,divine_intervention:1,sacred_duty:3,hammer_righteous:1|imp_might:5,benediction:5,imp_judgement:3,deflection_pal:5,seal_of_command:1,pursuit:2,conviction:5,righteous_hammer:3,art_of_war:1,sanctity_aura:3,eye_for_an_eye:3,vindication:3,divine_storm:1|imp_hawk:5,endurance_training:5,imp_monkey:5,pathfinding:2,tame_beast:1,unleashed_fury:5,ferocity_hunter:5,spirit_bond:2,frenzy_hunter:1,bestial_discipline:3,intimidation:3,ferocious_inspiration:3,bestial_wrath:1|lethal_shots:5,efficiency:5,imp_arcane_shot:5,imp_serpent_sting:5,piercing_shots:1,mortal_shots:5,ranged_spec:5,imp_multi_shot:2,rapid_fire:1,barrage:3,hawk_eye:3,scatter_shot:3,kill_shot:1|monster_slaying:5,deflection_hunter:5,clever_traps:3,survivalist:5,entrapment:1,savage_strikes:3,trap_mastery:3,surefooted:3,explosive_ammo:1,killer_instinct:3,lightning_reflexes:5,counterattack:2,wyvern_sting:1|imp_eviscerate:5,malice:5,ruthlessness:3,murder:5,deadly_poison:1,lethality:5,imp_poisons:5,vile_poisons:5,mutilate:1,seal_fate:3,vigor:3,remorseless:3,toxic_bloom:1|precision_rogue:5,lightning_reflexes_rogue:5,imp_sinister:3,endurance_rogue:5,blade_flurry_talent:1,dual_wield_rogue:5,sword_spec_rogue:5,weapon_expertise:3,adrenaline:1,aggression:3,imp_slice_dice:3,riposte:2,killing_spree:1|master_deception:5,opportunity:5,elusiveness:3,initiative:5,cheat_death:1,imp_ambush:3,serrated_blades:3,setup:3,preparation:1,dirty_deeds:3,deadliness:5,heightened_senses:2,shadow_dance:1|unbreakable_will:5,wand_spec:5,imp_pw_shield:3,martyrdom:5,divine_aegis:1,mental_agility:5,meditation:3,mental_strength:5,rapture:1,force_of_will:5,silent_resolve:3,imp_inner_fire:3,penance:1|holy_spec:5,imp_renew:5,divine_fury:5,holy_reach:3,holy_nova_talent:1,inspiration:3,searing_light:3,spiritual_guidance:5,holy_fire_talent:1,spiritual_healing:3,blessed_recovery:3,holy_concentration:3,chastise:1|spirit_tap:5,blackout:5,imp_swp:2,shadow_focus:5,shadow_weaving:1,imp_mind_blast:5,darkness:5,imp_psychic_scream:2,shadowy_apparitions:1,shadow_reach:3,shadow_power:3,imp_vampiric:3,shadowform:1|convection:5,concussion:5,earths_grasp:3,call_of_flame:3,lightning_overload:1,reverberation:5,call_of_thunder:5,imp_fire_totems:2,elemental_fury:1,lightning_mastery:5,storm_reach:2,elemental_devastation:3,elemental_mastery:1|ancestral_knowledge:5,shield_spec_shaman:5,guardian_totems:2,thundering_strikes:5,windfury:1,two_hand_shaman:5,elemental_weapons:3,anticipation_shaman:3,maelstrom:1,enhancing_totems:3,flurry_shaman:3,parry_shaman:3,stormstrike:1|imp_healing_wave:5,tidal_focus:5,totemic_focus:5,natures_guidance:3,twin_totems:1,restorative_totems:3,tidal_mastery:5,healing_way:3,reincarnation:1,purification:5,totemic_mastery:3,ancestral_healing:3,totemic_call:1|arcane_focus:5,arcane_subtlety:5,imp_arcane_explosion:3,magic_absorption:5,arcane_concentration:1,arcane_meditation:3,arcane_mind:5,imp_blink:3,presence_of_mind:1,arcane_instability:3,arcane_fortitude:3,arcane_reach:3,arcane_power:1|imp_fireball:5,impact:5,flame_throwing:2,imp_flamestrike:5,ignite:1,incinerate:3,master_elements:3,critical_mass:3,hot_streak:1,fire_power:5,burning_soul:3,imp_blast_wave:3,pyroclasm:1|frost_warding:5,imp_frostbolt:5,elemental_precision:3,ice_shards:5,frostbite:1,piercing_ice:3,shatter:5,arctic_reach:2,splitting_ice:1,frost_channeling:3,permafrost:3,imp_ice_barrier:3,water_elemental:1|suppression:5,imp_corruption:5,imp_coa:3,imp_drain_life:5,nightfall:1,fel_concentration:3,grim_reach:1,shadow_mastery:5,contagion:1,amplify_curse:3,siphon_life:1,dark_pact:3,seed_of_corruption:1|demonic_embrace:5,fel_intellect:5,fel_stamina:3,imp_health_funnel:5,summon_imp:1,unholy_power:5,imp_succubus:3,master_demonologist:5,demonic_pact:1,demonic_knowledge:3,imp_enslave:3,demonic_sacrifice:3,felguard:1|imp_shadow_bolt:5,cataclysm:5,bane:5,aftermath:5,shadowburn:1,devastation:5,destructive_reach:3,imp_searing_pain:3,conflagrate:1,emberstorm:5,ruin:3,intensity:3,rain_of_chaos:1|imp_wrath:5,natures_grasp:3,imp_moonfire:5,natural_weapons:5,omen_of_clarity:1,vengeance_druid:5,imp_starfire:3,moonglow:3,starfall:1,imp_hurricane:3,moonfury:5,natures_reach:2,force_of_nature:1|ferocity_druid:5,feral_aggression:5,feral_instinct:3,brutal_impact:5,rake:1,sharpened_claws:3,predatory_strikes:3,thick_hide:3,blood_frenzy:1,savage_fury:3,heart_of_wild:5,primal_fury:2,leader_of_pack:1,cat_form:1|imp_motw:5,furor:5,imp_healing_touch:5,natures_focus:5,swiftmend:1,reflection:3,tranquil_spirit:5,imp_rejuvenation:3,tranquility:1,gift_of_nature:5,imp_tranquility:3,natural_shapeshifter:3,tree_of_life:1".split('|').map(t=>t.split(',').map(x=>{const [i,m]=x.split(':');return [i,+m]}));
+const PERKMAX={rerolls:3,banish:3,skip:1,opening:1,veteran:2,keen:2,companion:1,leash:3,paws:3,instinct_gold:1,instinct_wisps:1,instinct_runes:1,second:1};
+const PETS={squirrel:"Squirrel",rabbit:"Snowshoe Rabbit",macaw:"Crimson Macaw",owl:"Great Horned Owl",frog:"Tree Frog",kingsnake:"Black Kingsnake",darter:"Sprite Darter",whelp:"Black Whelpling",zergling:"Zergling",chicken:"Westfall Chicken",roach:"Undercity Cockroach",panda:"Panda Cub"};
+const TABARDS={90001:"Warsong Battle",90002:"Silverwing Battle",90003:"Arathor Battle",90004:"Defilers Battle",90005:"Stormpike Battle",90006:"Frostwolf Battle",90011:"Stormwind",90012:"Lordaeron",90013:"Stromgarde",90014:"Theramore",90015:"Dalaran",90016:"Scarlet Crusade",90017:"Darkmoon Faire",90018:"Alliance",90019:"Horde",90020:"Argent Dawn",90021:"Flame",90022:"Frost",90023:"Alliance Officer's",90024:"Horde Officer's"};
+const ACH_IDS=[...["warrior","paladin","hunter","rogue","priest","shaman","mage","warlock","druid"].flatMap(c=>["class:"+c,"classlast:"+c]),
+  ...ZONES.flatMap(z=>["zone:"+z,"zone9:"+z]),
+  ...["bosses100","caches100","gold50k","gold5k","guardians100","guardians500","kills100k","kills10k","kills1m","runs10","runs100","wins50"].map(x=>"count:"+x),
+  ...["bare","endless25","endless30","endless40","kills2500","kills6000","lairs","odds","thrifty"].map(x=>"feat:"+x),"legendaryset"];
+const SLOT_IDS=[0,2,4,5,6,7,8,9,15];
+const OFFHAND=[4,7]; // Rogue and Shaman also have an off-hand piece (5 tiers each)
+let hcls=null;
+const pretty=id=>id.replace(/^imp_/,"improved_").replace(/_/g," ");
+const gearId=(c,s,t)=>100000+c*1000+s*100+t*10;
+function tl(cls){const i=find("talent",cls);if(i<0)return{xp:"0",r:{}};const p=L[i].split("|");const r={};(p[3]||"").split(",").filter(Boolean).forEach(x=>{const [k,v]=x.split(":");r[k]=+v});return{xp:p[2]||"0",r}}
+function putTl(cls,xp,r){const order=TREES.flat().map(t=>t[0]);const s=order.filter(k=>r[k]>0).map(k=>k+":"+r[k]).join(",");if(!s&&+xp===0){removeLine("talent",cls);return}ensureHero(cls);setLine("talent",cls,xp+"|"+s)}
+function treesOf(cls){const i=CLS_ORDER.indexOf(+cls);return i<0?[]:TREES.slice(i*3,i*3+3)}
+function renderHeroes(){
+  const ids=classIds(); if(!ids.length)return;
+  const sel=$("hc"); if(hcls===null||!ids.includes(hcls)) hcls=ids[0];
+  sel.innerHTML=ids.map(c=>`<option value="${c}"${c===hcls?" selected":""}>${CLASS_NAMES[c]||c}</option>`).join("");
+  const t=tl(hcls); $("hxp").value=t.xp;
+  const hi=find("hero",hcls), hp=hi>=0?L[hi].split("|"):null, al=CLASS_RACES[hcls]||[1];
+  $("hrace").innerHTML=al.map(r=>`<option value="${r}"${hp&&+hp[2]===r?" selected":""}>${RACES[r]}</option>`).join("");
+  $("hgen").value=hp?hp[3]:"0";
+  $("trees").innerHTML=treesOf(hcls).map(tr=>`<div class="grid" style="margin-bottom:14px">`+tr.map(([k,m])=>`<label class="f">${pretty(k)} (max ${m})<input type="number" min="0" max="${m}" data-t="${k}" data-m="${m}" value="${t.r[k]||0}"></label>`).join("")+`</div>`).join("")||"<p>No talent tree known for this class.</p>";
+  $("trees").querySelectorAll("input").forEach(inp=>inp.addEventListener("change",()=>{
+    const m=+inp.dataset.m; inp.value=Math.max(0,Math.min(m,Math.floor(+inp.value||0)));
+    const cur=tl(hcls); cur.r[inp.dataset.t]=+inp.value; putTl(hcls,cur.xp,cur.r); syncRaw();}));
+}
+function gearAdd(classes){classes.forEach(ensureHero);
+  const i=find("items"); const have=new Set(i>=0?(L[i].split("|")[1]||"").split(",").filter(Boolean).map(Number):[]);
+  classes.forEach(c=>{for(let s=0;s<=(OFFHAND.includes(+c)?9:8);s++)for(let t=0;t<=4;t++)have.add(gearId(c,s,t))});
+  setLine("items",undefined,[...have].sort((a,b)=>a-b).join(","));
+}
+function renderColl(){
+  const get=k=>{const i=find(k);return new Set(i>=0?(L[i].split("|")[1]||"").split(",").filter(Boolean):[])};
+  const mk=(el,map,key)=>{const have=get(key);$(el).innerHTML=Object.entries(map).map(([id,n])=>`<label><input type="checkbox" data-id="${id}"${have.has(String(id))?" checked":""}> ${n}</label>`).join("");
+    $(el).querySelectorAll("input").forEach(cb=>cb.addEventListener("change",()=>{const s=get(key);cb.checked?s.add(cb.dataset.id):s.delete(cb.dataset.id);
+      const order=Object.keys(map).map(String);setLine(key,undefined,[...s].sort((a,b)=>(order.indexOf(a)+1||999)-(order.indexOf(b)+1||999)).join(","));syncRaw()}))};
+  mk("petl",PETS,"pets"); mk("tabl",TABARDS,"tabard");
+}
+$("hc").addEventListener("change",()=>{hcls=+$("hc").value;renderHeroes()});
+function putHero(){ensureHero(hcls);const p=L[find("hero",hcls)].split("|");setLine("hero",hcls,$("hrace").value+"|"+$("hgen").value+"|"+(p[4]||"0,0,0,0,0"));syncRaw()}
+$("hrace").addEventListener("change",putHero);$("hgen").addEventListener("change",putHero);
+$("hxp").addEventListener("change",()=>{const t=tl(hcls);putTl(hcls,String(Math.max(0,Math.floor(+$("hxp").value||0))),t.r);syncRaw()});
+const MAXXP=1000000000; // about 3.5x the biggest value in a real save; change here if you want a different cap
+$("xMax").addEventListener("click",()=>{putTl(hcls,String(MAXXP),tl(hcls).r);render()});
+$("xAll").addEventListener("click",()=>{CLS_ORDER.forEach(c=>putTl(c,String(MAXXP),tl(c).r));render()});
+$("tMax").addEventListener("click",()=>{const r={};treesOf(hcls).flat().forEach(([k,m])=>r[k]=m);putTl(hcls,tl(hcls).xp,r);render()});
+$("tClr").addEventListener("click",()=>{putTl(hcls,tl(hcls).xp,{});render()});
+$("gCls").addEventListener("click",()=>{gearAdd([hcls]);render()});
+$("gAll").addEventListener("click",()=>{gearAdd(CLS_ORDER);render()});
+$("gEq").addEventListener("click",()=>{gearAdd([hcls]);ensureHero(hcls);setLine("equip",hcls,SLOT_IDS.map((s,i)=>s+":"+gearId(hcls,i,4)).concat(OFFHAND.includes(+hcls)?["16:"+gearId(hcls,9,4)]:[]).join(","));render()});
+$("achAll").addEventListener("click",()=>{
+  const ai=find("ach"),ti=find("achat"); const have=new Set(ai>=0?(L[ai].split("|")[1]||"").split(",").filter(Boolean):[]);
+  const at=new Map(ti>=0?(L[ti].split("|")[1]||"").split(",").filter(Boolean).map(x=>x.split("=")):[]);
+  const now=String(Math.floor(Date.now()/1000)); ACH_IDS.forEach(a=>{have.add(a);if(!at.has(a))at.set(a,now)});
+  setLine("ach",undefined,[...have].sort().join(",")); setLine("achat",undefined,[...at].map(([k,v])=>k+"="+v).sort().join(",")); render();
+});
+
+
+const CODEX={"J":{"accuria":"Band of Accuria","quick_strike":"Quick Strike Ring","dark_iron":"Heavy Dark Iron Ring","dragonslayer":"Master Dragonslayer's Ring","archimtiros":"Archimtiros' Ring of Reckoning","devoured":"Ring of the Devoured","spell_power":"Ring of Spell Power","seal_damned":"Seal of the Damned","blooddrinker":"Blooddrinker's Band","earthstrike":"Earthstrike","tep":"Talisman of Ephemeral Power","lifegiving":"Lifegiving Gem","hoj":"Hand of Justice","blackhand":"Blackhand's Breadth","carrot":"Carrot on a Stick","remote":"Gnomish Universal Remote","insignia":"Insignia of the Horde","eldre_thalas":"Royal Seal of Eldre'Thalas","chosen":"Mark of the Chosen","onyxia_blood":"Onyxia Blood Talisman","war_horn":"Horn of the Warchief","soulstone":"Major Soulstone"},"A":{"mark_of_fordring":["Mark of Fordring",0],"star_of_mystaria":["Star of Mystaria",0],"talvash":["Talvash's Enhancing Necklace",0],"south_seas_kelp":["Pristine Enchanted South Seas Kelp",0],"prestor":["Prestor's Talisman of Connivery",1],"animated_chain":["Animated Chain Necklace",1],"woven_ivy":["Woven Ivy Necklace",1],"darkmoon":["Amulet of the Darkmoon",1],"jeklik":["Jeklik's Opaline Talisman",2],"eye_of_hakkar":["The Eye of Hakkar",2],"steadfast_might":["Medallion of Steadfast Might",2],"enlightenment":["Choker of Enlightenment",3],"vek_nilash":["Amulet of Vek'nilash",3],"fallen_dragon":["Pendant of the Fallen Dragon",3],"malice_stone":["Malice Stone Pendant",3],"onyxia_tooth":["Onyxia Tooth Pendant",4],"fire_lord":["Choker of the Fire Lord",4]},"L":{"1":["cleave","whirlwind","thunder_clap","mortal_strike","execute","demo_shout","battle_shout","bloodthirst","rend","shield_slam","bloodrage"],"2":["consecration","exorcism","hammer_of_wrath","holy_shock","holy_wrath","judgement","hammer_of_justice","holy_light","divine_shield","holy_shield","redemption"],"3":["auto_shot","arcane_shot","multi_shot","serpent_sting","volley","explosive_trap","concussive_shot","aimed_shot","immolation_trap","frost_trap","hunters_mark"],"4":["sinister_strike","eviscerate","blade_flurry","rupture","kidney_shot","gouge","ghostly_strike","adrenaline_rush","backstab","slice_and_dice","seal_fate"],"5":["smite","sw_pain","mind_blast","holy_nova","pw_shield","renew","holy_fire","mind_flay","psychic_scream","devouring_plague","lightwell"],"7":["lightning_bolt","chain_lightning","earth_shock","flame_shock","frost_shock","lightning_shield","magma_totem","searing_totem","fire_nova","healing_wave","call_of_flame"],"8":["fireball","frostbolt","arcane_missiles","frost_nova","arcane_explosion","blizzard","flamestrike","fire_blast","cone_of_cold","blast_wave","pyroblast","ice_barrier","polymorph"],"9":["shadow_bolt","corruption","immolate","curse_of_agony","rain_of_fire","hellfire","death_coil","searing_pain","drain_life","fear","soul_fire"],"11":["wrath","moonfire","starfire","hurricane","insect_swarm","entangling_roots","rejuvenation","regrowth","thorns","swipe","shred","faerie_fire"]}};
+const RARITY={J:id=>id==="carrot"?3:4,A:id=>CODEX.A[id][1],L:()=>4};
+function seenMap(){const i=find("seen");return new Map(i>=0?(L[i].split("|")[1]||"").split(",").filter(Boolean).map(x=>{const k=x.lastIndexOf("=");return[x.slice(0,k),x.slice(k+1)]}):[])}
+function putSeen(m){const o=[...m].sort((a,b)=>a[0]<b[0]?-1:1).map(([k,v])=>k+"="+v).join(",");if(o)setLine("seen",undefined,o);else removeLine("seen")}
+function codexKeys(){const ks=[];Object.keys(CODEX.J).forEach(k=>ks.push([k,RARITY.J(k)]));Object.keys(CODEX.A).forEach(k=>ks.push([k,RARITY.A(k)]));Object.values(CODEX.L).flat().forEach(k=>ks.push(["legendary:"+k,4]));return ks}
+function renderCodex(){
+  const m=seenMap();
+  const box=(id,name,rar)=>`<label><input type="checkbox" data-k="${id}" data-r="${rar}"${m.has(id)?" checked":""}> ${name}</label>`;
+  $("cxJ").innerHTML=Object.entries(CODEX.J).map(([k,n])=>box(k,n,RARITY.J(k))).join("");
+  $("cxA").innerHTML=Object.entries(CODEX.A).map(([k,[n,r]])=>box(k,n,r)).join("");
+  $("cxL").innerHTML=CLS_ORDER.map(c=>`<p><strong>${CLASS_NAMES[c]}</strong></p><div class="grid">`+CODEX.L[c].map(k=>box("legendary:"+k,pretty(k),4)).join("")+"</div>").join("");
+  document.querySelectorAll("#tab-codex input[type=checkbox]").forEach(cb=>cb.addEventListener("change",()=>{
+    const s=seenMap(); if(cb.checked){if(!s.has(cb.dataset.k))s.set(cb.dataset.k,cb.dataset.r)}else s.delete(cb.dataset.k); putSeen(s); syncRaw()}));
+}
+$("cxAll").addEventListener("click",()=>{const s=seenMap();codexKeys().forEach(([k,r])=>{if(!s.has(k))s.set(k,String(r))});putSeen(s);render()});
+$("cxNone").addEventListener("click",()=>{const k=new Set(codexKeys().map(x=>x[0])),s=seenMap();[...s.keys()].forEach(x=>{if(k.has(x))s.delete(x)});putSeen(s);render()});
+
+/* ---------- wiring ---------- */
+const drop=$("loader"), fileInput=$("file");
+drop.addEventListener("click",()=>fileInput.click());
+drop.addEventListener("keydown",e=>{if(e.key==="Enter"||e.key===" "){e.preventDefault();fileInput.click()}});
+["dragenter","dragover"].forEach(ev=>drop.addEventListener(ev,e=>{e.preventDefault();drop.classList.add("over")}));
+["dragleave","drop"].forEach(ev=>drop.addEventListener(ev,e=>{e.preventDefault();drop.classList.remove("over")}));
+drop.addEventListener("drop",e=>{const f=e.dataTransfer.files[0]; if(f) readFile(f)});
+fileInput.addEventListener("change",()=>{if(fileInput.files[0]) readFile(fileInput.files[0])});
+function readFile(f){const r=new FileReader();r.onload=()=>openText(r.result,f.name);r.readAsText(f)}
+
+document.querySelectorAll(".tabs button").forEach(b=>b.addEventListener("click",()=>{
+  document.querySelectorAll(".tabs button").forEach(x=>x.setAttribute("aria-selected",x===b));
+  ["basic","perks","heroes","coll","codex","raw"].forEach(t=>$("tab-"+t).classList.toggle("hide",t!==b.dataset.tab));
+}));
+$("clearAll").addEventListener("click",()=>{classIds().forEach(c=>setCleared(c,ZONES.length));render()});
+$("applyRaw").addEventListener("click",()=>{
+  L=$("raw").value.replace(/\r\n/g,'\n').split('\n'); const pr=validate();
+  $("rawMsg").textContent=pr.length?pr[0]:"Applied."; render();
+});
+["resets","pets","tabard"].forEach(id=>$(id).addEventListener("change",()=>{
+  const v=$(id).value.trim(); setLine(id,undefined,id==="resets"?String(Math.max(0,Math.floor(+v||0))):v.replace(/\s*,\s*/g,',')); syncRaw();
+}));
+$("save").addEventListener("click",download);
+$("reload").addEventListener("click",()=>{$("editor").classList.add("hide");$("loader").classList.remove("hide");fileInput.value="";$("hint").textContent=""});
+</script>
+</body>
+</html>
