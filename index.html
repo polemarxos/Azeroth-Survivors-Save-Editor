@@ -21,6 +21,7 @@ h1{font-size:26px;margin:0 0 4px;letter-spacing:-.01em}
 h2{font-size:17px;margin:0 0 12px}
 p{margin:0 0 10px}
 .sub{color:var(--muted);margin-bottom:22px}
+.ver{color:var(--muted);font-size:13px;margin:0 0 6px}
 .panel{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:18px;margin-bottom:16px}
 .drop{border:2px dashed var(--line);border-radius:10px;padding:30px;text-align:center;background:var(--panel);cursor:pointer}
 .drop.over{border-color:var(--accent);background:var(--ok-bg)}
@@ -57,6 +58,7 @@ code{background:var(--bg);padding:1px 5px;border-radius:4px;font-size:13px}
 <body>
 <main>
   <h1>Azeroth Survivors Save Editor</h1>
+  <p class="ver">Version 2026-10-18</p>
   <p class="sub">Opens a save file, lets you change it, and writes a new one the game will accept. Everything runs in this page. Your file is never uploaded.</p>
 
   <div id="loader" class="drop" tabindex="0" role="button" aria-label="Choose a save file">
@@ -84,7 +86,7 @@ code{background:var(--bg);padding:1px 5px;border-radius:4px;font-size:13px}
       </div>
       <div class="panel">
         <h2>Zones cleared per class</h2>
-        <p><small>Zones are cleared in order. The next zone opens automatically (the game stores this as “unlocked”).</small></p>
+        <p><small>Tick the zones each class has cleared. The game’s “unlocked” count is set for you from the furthest zone ticked. Un’Goro Crater, Scarlet Monastery and Naxxramas are new in the latest version.</small></p>
         <div id="classes"></div>
         <div class="row" style="margin-top:12px">
           <button id="clearAll">Mark all zones cleared for every class</button>
@@ -116,7 +118,7 @@ code{background:var(--bg);padding:1px 5px;border-radius:4px;font-size:13px}
         <p style="margin-top:10px"><small>Talent points come from experience. If you max every talent, also raise the experience a lot, or the game may not count all points as earned.</small></p>
         <div class="row"><button id="xMax">Max talent experience (this class)</button><button id="xAll">Max talent experience (all classes)</button><button id="tMax">Max all talents</button><button id="tClr">Clear talents</button>
           <button id="gCls">Collect all gear (this class)</button><button id="gAll">Collect all gear (every class)</button><button id="gEq">Equip best gear (this class)</button></div>
-        <p><small>Rogue and Shaman get 5 extra off-hand items each (IDs follow the same pattern as the rest of the gear).</small></p>
+        <p><small>Rogue and Shaman get 5 extra off-hand items each (IDs follow the same pattern as the rest of the gear). Each class also gets its full PvP set (every armor slot and the weapon, plus the Rogue and Shaman off-hand).</small></p>
       </div>
       <div class="panel"><h2>Talents</h2><div id="trees"></div></div>
     </section>
@@ -222,10 +224,10 @@ function seal(plain,header){
 }
 
 /* ---------- save model ---------- */
-const ZONES=["elwynn","duskwood","wsg","ab","feralas","arena","av","brm","aq"];
-const ZONE_NAMES={elwynn:"Elwynn Forest",duskwood:"Duskwood",wsg:"Warsong Gulch",ab:"Arathi Basin",feralas:"Feralas",arena:"Arena",av:"Alterac Valley",brm:"Blackrock Mountain",aq:"Ahn'Qiraj"};
+const ZONES=["elwynn","duskwood","wsg","ungoro","ab","feralas","arena","sm","av","brm","aq","naxx"]; // order taken from the game (new version)
+const ZONE_NAMES={elwynn:"Elwynn Forest",duskwood:"Duskwood",wsg:"Warsong Gulch",ab:"Arathi Basin",feralas:"Feralas",arena:"Arena",av:"Alterac Valley",brm:"Blackrock Mountain",aq:"Ahn'Qiraj",ungoro:"Un'Goro Crater",sm:"Scarlet Monastery",naxx:"Naxxramas"};
 const CLASS_NAMES={1:"Warrior",2:"Paladin",3:"Hunter",4:"Rogue",5:"Priest",6:"Death Knight",7:"Shaman",8:"Mage",9:"Warlock",11:"Druid"};
-const KNOWN_KEYS=["pick","unlock","items","equip","look","talent","seen","ach","achat","stat","beat","perk","tabard","pets","resets","hero"];
+const KNOWN_KEYS=["pick","open","unlock","items","equip","look","talent","seen","ach","achat","stat","beat","perk","tabard","pets","resets","hero"];
 const STAT_LABELS={kills:"Kills",gold:"Gold",guardians:"Guardians slain",bosses:"Bosses slain",runs:"Runs",wins:"Wins",caches:"Caches opened"};
 
 let L=[];            // the save, one string per line
@@ -245,7 +247,7 @@ const RACES={1:"Human",2:"Orc",3:"Dwarf",4:"Night Elf",5:"Undead",6:"Tauren",7:"
 const CLASS_RACES={1:[1,2,3,4,5,6,7,8],2:[1,3],3:[2,3,4,6,8],4:[1,2,3,4,5,7,8],5:[1,3,4,5,8],7:[2,6,8],8:[1,5,7,8],9:[1,2,5,7],11:[4,6]};
 function ensureHero(c){
   if(find("hero",c)<0) setLine("hero",c,CLASS_RACES[c][0]+"|0|0,0,0,0,0");
-  if(find("unlock",c)<0) setLine("unlock",c,"1");
+  if(find("unlock",c)<0&&find("open",c)<0) setOpen(c,-1);
 }
 function classIds(){return CLS_ORDER.slice()}
 function classIdsOld(){
@@ -253,16 +255,20 @@ function classIdsOld(){
   L.forEach(l=>{const p=l.split('|'); if(["hero","unlock","beat","talent","equip"].includes(p[0])&&/^\d+$/.test(p[1]||""))s.add(+p[1])});
   return [...s].sort((a,b)=>a-b);
 }
-function clearedCount(cls){
-  const i=find("beat",cls); if(i<0) return 0;
-  const set=new Set((L[i].split('|')[2]||"").split(',').filter(Boolean));
-  let n=0; while(n<ZONES.length&&set.has(ZONES[n])) n++; return n;
+function clearedSet(cls){const i=find("beat",cls);return new Set(i<0?[]:(L[i].split('|')[2]||"").split(',').filter(Boolean))}
+const newFmt=()=>L.some(l=>l.startsWith("open|"))||!L.some(l=>l.startsWith("unlock|"));
+function setOpen(cls,hi){
+  if(newFmt()){removeLine("unlock",cls);setLine("open",cls,ZONES[Math.min(ZONES.length-1,hi+1)])}
+  else setLine("unlock",cls,String(Math.min(ZONES.length,hi+2)));
 }
-function setCleared(cls,n){
+function setBeat(cls,set){
   ensureHero(cls);
-  if(n>0) setLine("beat",cls,ZONES.slice(0,n).join(',')); else removeLine("beat",cls);
-  setLine("unlock",cls,String(Math.min(ZONES.length,n+1)));
+  const known=ZONES.filter(z=>set.has(z)), all=known.concat([...set].filter(z=>!ZONES.includes(z)));
+  if(all.length) setLine("beat",cls,all.join(',')); else removeLine("beat",cls);
+  const hi=Math.max(-1,...known.map(z=>ZONES.indexOf(z)));
+  setOpen(cls,hi);
 }
+function setCleared(cls,n){setBeat(cls,new Set(ZONES.slice(0,n)))}
 
 /* ---------- UI ---------- */
 function status(kind,msg){$("status").innerHTML=`<div class="status ${kind}">${msg}</div>`}
@@ -279,14 +285,13 @@ function render(){
   }));
   // classes
   $("classes").innerHTML=classIds().map(c=>{
-    const n=clearedCount(c);
-    return `<div class="cls"><div class="nm">${CLASS_NAMES[c]||("Class "+c)}</div>
-      <div><input type="range" min="0" max="${ZONES.length}" value="${n}" data-cls="${c}" aria-label="Zones cleared for ${CLASS_NAMES[c]||c}"><div class="meta" id="m${c}">${zoneText(n)}</div></div>
-      <div class="meta"><span id="n${c}">${n}</span> / ${ZONES.length}</div></div>`}).join('');
-  $("classes").querySelectorAll("input").forEach(r=>r.addEventListener("input",()=>{
-    const c=r.dataset.cls,n=+r.value; setCleared(c,n);
-    $("m"+c).textContent=zoneText(n); $("n"+c).textContent=n; syncRaw();
-  }));
+    const s=clearedSet(c);
+    return `<div class="cls"><div class="nm">${CLASS_NAMES[c]||("Class "+c)}<div class="meta"><button class="small" data-all="${c}">All</button> <button class="small" data-none="${c}">None</button></div></div>
+      <div class="grid">${ZONES.map(z=>`<label><input type="checkbox" data-cls="${c}" data-z="${z}"${s.has(z)?" checked":""}> ${ZONE_NAMES[z]||z}</label>`).join("")}</div></div>`}).join('');
+  $("classes").querySelectorAll("input").forEach(cb=>cb.addEventListener("change",()=>{
+    const s=clearedSet(cb.dataset.cls); cb.checked?s.add(cb.dataset.z):s.delete(cb.dataset.z); setBeat(cb.dataset.cls,s); syncRaw();}));
+  $("classes").querySelectorAll("button").forEach(b=>b.addEventListener("click",()=>{
+    const c=b.dataset.all||b.dataset.none; setBeat(c,new Set(b.dataset.all?ZONES:[])); render();}));
   // perks
   const pi=find("perk"); const perks=pi>=0?kvParse(L[pi].split('|')[1]||""):[];
   $("perks").innerHTML=perks.map(([k,v])=>`<div class="perk"><span>${k.replace(/_/g,' ')}</span><input type="number" min="0" max="${PERKMAX[k]||9}" data-perk="${k}" value="${v}"><span></span></div>`).join('')||"<p>No perks in this save.</p>";
@@ -298,7 +303,7 @@ function render(){
   renderHeroes(); renderColl(); renderCodex();
   // collection
   const get=k=>{const i=find(k);return i>=0?(L[i].split('|')[1]||""):""};
-  $("resets").value=get("resets"); $("pets").value=get("pets"); $("tabard").value=get("tabard");
+  $("resets").value=get("resets"); $("resets").parentElement.classList.toggle("hide",find("resets")<0&&newFmt()); $("pets").value=get("pets"); $("tabard").value=get("tabard");
 }
 function zoneText(n){return n===0?"No zones cleared":n===ZONES.length?"All zones cleared":`Cleared through ${ZONE_NAMES[ZONES[n-1]]}; next: ${ZONE_NAMES[ZONES[n]]}`}
 
@@ -343,9 +348,13 @@ const TABARDS={90001:"Warsong Battle",90002:"Silverwing Battle",90003:"Arathor B
 const ACH_IDS=[...["warrior","paladin","hunter","rogue","priest","shaman","mage","warlock","druid"].flatMap(c=>["class:"+c,"classlast:"+c]),
   ...ZONES.flatMap(z=>["zone:"+z,"zone9:"+z]),
   ...["bosses100","caches100","gold50k","gold5k","guardians100","guardians500","kills100k","kills10k","kills1m","runs10","runs100","wins50"].map(x=>"count:"+x),
-  ...["bare","endless25","endless30","endless40","kills2500","kills6000","lairs","odds","thrifty"].map(x=>"feat:"+x),"legendaryset"];
+  ...["bare","endless25","endless30","endless40","kills2500","kills6000","lairs","odds","thrifty"].map(x=>"feat:"+x),"legendaryset",...["codex:10","codex:50","codex:100","pieces:25","pieces:100","pieces:250","pieces:all","talents:1","talents:9"]];
 const SLOT_IDS=[0,2,4,5,6,7,8,9,15];
-const OFFHAND=[4,7]; // Rogue and Shaman also have an off-hand piece (5 tiers each)
+const WEAPON_SLOT=c=>c===3?17:15; // Hunter's bow uses the ranged slot
+const OFFHAND=[4,7];
+function pvpSlots(c){ // all slot positions that exist at the PvP tier (tier 5), confirmed in game
+  const s=[0,1,2,3,4,5,6,7,8]; if(+c===4||+c===7) s.push(9); // Rogue and Shaman also have an off-hand
+  return s}
 let hcls=null;
 const pretty=id=>id.replace(/^imp_/,"improved_").replace(/_/g," ");
 const gearId=(c,s,t)=>100000+c*1000+s*100+t*10;
@@ -367,7 +376,7 @@ function renderHeroes(){
 }
 function gearAdd(classes){classes.forEach(ensureHero);
   const i=find("items"); const have=new Set(i>=0?(L[i].split("|")[1]||"").split(",").filter(Boolean).map(Number):[]);
-  classes.forEach(c=>{for(let s=0;s<=(OFFHAND.includes(+c)?9:8);s++)for(let t=0;t<=4;t++)have.add(gearId(c,s,t))});
+  classes.forEach(c=>{for(let s=0;s<=(OFFHAND.includes(+c)?9:8);s++)for(let t=0;t<=4;t++)have.add(gearId(c,s,t));pvpSlots(c).forEach(s=>have.add(gearId(c,s,5)))});
   setLine("items",undefined,[...have].sort((a,b)=>a-b).join(","));
 }
 function renderColl(){
@@ -388,7 +397,7 @@ $("tMax").addEventListener("click",()=>{const r={};treesOf(hcls).flat().forEach(
 $("tClr").addEventListener("click",()=>{putTl(hcls,tl(hcls).xp,{});render()});
 $("gCls").addEventListener("click",()=>{gearAdd([hcls]);render()});
 $("gAll").addEventListener("click",()=>{gearAdd(CLS_ORDER);render()});
-$("gEq").addEventListener("click",()=>{gearAdd([hcls]);ensureHero(hcls);setLine("equip",hcls,SLOT_IDS.map((s,i)=>s+":"+gearId(hcls,i,4)).concat(OFFHAND.includes(+hcls)?["16:"+gearId(hcls,9,4)]:[]).join(","));render()});
+$("gEq").addEventListener("click",()=>{gearAdd([hcls]);ensureHero(hcls);setLine("equip",hcls,SLOT_IDS.map((s,i)=>(s===15?WEAPON_SLOT(+hcls):s)+":"+gearId(hcls,i,4)).concat(OFFHAND.includes(+hcls)?["16:"+gearId(hcls,9,4)]:[]).join(","));render()});
 $("achAll").addEventListener("click",()=>{
   const ai=find("ach"),ti=find("achat"); const have=new Set(ai>=0?(L[ai].split("|")[1]||"").split(",").filter(Boolean):[]);
   const at=new Map(ti>=0?(L[ti].split("|")[1]||"").split(",").filter(Boolean).map(x=>x.split("=")):[]);
@@ -398,7 +407,7 @@ $("achAll").addEventListener("click",()=>{
 
 
 const CODEX={"J":{"accuria":"Band of Accuria","quick_strike":"Quick Strike Ring","dark_iron":"Heavy Dark Iron Ring","dragonslayer":"Master Dragonslayer's Ring","archimtiros":"Archimtiros' Ring of Reckoning","devoured":"Ring of the Devoured","spell_power":"Ring of Spell Power","seal_damned":"Seal of the Damned","blooddrinker":"Blooddrinker's Band","earthstrike":"Earthstrike","tep":"Talisman of Ephemeral Power","lifegiving":"Lifegiving Gem","hoj":"Hand of Justice","blackhand":"Blackhand's Breadth","carrot":"Carrot on a Stick","remote":"Gnomish Universal Remote","insignia":"Insignia of the Horde","eldre_thalas":"Royal Seal of Eldre'Thalas","chosen":"Mark of the Chosen","onyxia_blood":"Onyxia Blood Talisman","war_horn":"Horn of the Warchief","soulstone":"Major Soulstone"},"A":{"mark_of_fordring":["Mark of Fordring",0],"star_of_mystaria":["Star of Mystaria",0],"talvash":["Talvash's Enhancing Necklace",0],"south_seas_kelp":["Pristine Enchanted South Seas Kelp",0],"prestor":["Prestor's Talisman of Connivery",1],"animated_chain":["Animated Chain Necklace",1],"woven_ivy":["Woven Ivy Necklace",1],"darkmoon":["Amulet of the Darkmoon",1],"jeklik":["Jeklik's Opaline Talisman",2],"eye_of_hakkar":["The Eye of Hakkar",2],"steadfast_might":["Medallion of Steadfast Might",2],"enlightenment":["Choker of Enlightenment",3],"vek_nilash":["Amulet of Vek'nilash",3],"fallen_dragon":["Pendant of the Fallen Dragon",3],"malice_stone":["Malice Stone Pendant",3],"onyxia_tooth":["Onyxia Tooth Pendant",4],"fire_lord":["Choker of the Fire Lord",4]},"L":{"1":["cleave","whirlwind","thunder_clap","mortal_strike","execute","demo_shout","battle_shout","bloodthirst","rend","shield_slam","bloodrage"],"2":["consecration","exorcism","hammer_of_wrath","holy_shock","holy_wrath","judgement","hammer_of_justice","holy_light","divine_shield","holy_shield","redemption"],"3":["auto_shot","arcane_shot","multi_shot","serpent_sting","volley","explosive_trap","concussive_shot","aimed_shot","immolation_trap","frost_trap","hunters_mark"],"4":["sinister_strike","eviscerate","blade_flurry","rupture","kidney_shot","gouge","ghostly_strike","adrenaline_rush","backstab","slice_and_dice","seal_fate"],"5":["smite","sw_pain","mind_blast","holy_nova","pw_shield","renew","holy_fire","mind_flay","psychic_scream","devouring_plague","lightwell"],"7":["lightning_bolt","chain_lightning","earth_shock","flame_shock","frost_shock","lightning_shield","magma_totem","searing_totem","fire_nova","healing_wave","call_of_flame"],"8":["fireball","frostbolt","arcane_missiles","frost_nova","arcane_explosion","blizzard","flamestrike","fire_blast","cone_of_cold","blast_wave","pyroblast","ice_barrier","polymorph"],"9":["shadow_bolt","corruption","immolate","curse_of_agony","rain_of_fire","hellfire","death_coil","searing_pain","drain_life","fear","soul_fire"],"11":["wrath","moonfire","starfire","hurricane","insect_swarm","entangling_roots","rejuvenation","regrowth","thorns","swipe","shred","faerie_fire"]}};
-const RARITY={J:id=>id==="carrot"?3:4,A:id=>CODEX.A[id][1],L:()=>4};
+const RARITY={J:id=>4,A:id=>CODEX.A[id][1],L:()=>4};
 function seenMap(){const i=find("seen");return new Map(i>=0?(L[i].split("|")[1]||"").split(",").filter(Boolean).map(x=>{const k=x.lastIndexOf("=");return[x.slice(0,k),x.slice(k+1)]}):[])}
 function putSeen(m){const o=[...m].sort((a,b)=>a[0]<b[0]?-1:1).map(([k,v])=>k+"="+v).join(",");if(o)setLine("seen",undefined,o);else removeLine("seen")}
 function codexKeys(){const ks=[];Object.keys(CODEX.J).forEach(k=>ks.push([k,RARITY.J(k)]));Object.keys(CODEX.A).forEach(k=>ks.push([k,RARITY.A(k)]));Object.values(CODEX.L).flat().forEach(k=>ks.push(["legendary:"+k,4]));return ks}
