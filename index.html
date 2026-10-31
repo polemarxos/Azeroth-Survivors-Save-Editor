@@ -209,6 +209,7 @@ code{background:var(--bg);border:1px solid var(--line);padding:1px 6px;border-ra
         <div id="clsbar" class="clsbar"></div>
         <div class="row"><label class="f hide">Class <select id="hc"></select></label>
           <label class="f">Talent experience <input id="hxp" type="number" min="0"></label>
+          <label class="f">Marks <input id="hmarks" type="number" min="0"></label>
           <label class="f">Weapon glow <select id="hglow"></select></label>
           <label class="f">Race <select id="hrace"></select></label><label class="f">Gender <select id="hgen"><option value="0">Male</option><option value="1">Female</option></select></label></div>
         <p style="margin-top:10px"><small>Talent points come from experience. If you max every talent, also raise the experience a lot, or the game may not count all points as earned.</small></p>
@@ -506,7 +507,8 @@ function renderHeroes(){
   const hi=find("hero",hcls), hp=hi>=0?L[hi].split("|"):null, al=racesFor(hcls);
   $("hrace").innerHTML=al.map(r=>`<option value="${r}"${hp&&+hp[2]===r?" selected":""}>${RACES[r]}</option>`).join("");
   $("hgen").value=hp?hp[3]:"0";
-  {const gi=find("glow",hcls),gv=gi>=0?+(L[gi].split("|")[2]||0):0;
+  {const mi=find("marks",hcls);$("hmarks").value=mi>=0?(L[mi].split("|")[2]||"0"):"0";
+   const gi=find("glow",hcls),gv=gi>=0?+(L[gi].split("|")[2]||0):0;
    $("hglow").innerHTML=GLOWS.concat(GLOWS.some(g=>g[0]===gv)?[]:[[gv,"Glow "+gv]]).map(([v,n])=>`<option value="${v}"${v===gv?" selected":""}>${n}</option>`).join("")}
   const TN={1:["Arms","Fury","Protection"],2:["Holy","Protection","Retribution"],3:["Beast Mastery","Marksmanship","Survival"],4:["Assassination","Combat","Subtlety"],5:["Discipline","Holy","Shadow"],7:["Elemental","Enhancement","Restoration"],8:["Arcane","Fire","Frost"],9:["Affliction","Demonology","Destruction"],11:["Balance","Feral Combat","Restoration"]}[hcls]||[];
   let total=0;
@@ -545,6 +547,7 @@ function renderColl(){
 }
 $("hc").addEventListener("change",()=>{hcls=+$("hc").value;renderHeroes()});
 function putHero(){ensureHero(hcls);const p=L[find("hero",hcls)].split("|");setLine("hero",hcls,$("hrace").value+"|"+$("hgen").value+"|"+(p[4]||"0,0,0,0,0"));syncRaw()}
+$("hmarks").addEventListener("change",()=>{ensureHero(hcls);const v=Math.max(0,Math.floor(+$("hmarks").value||0));if(v)setLine("marks",hcls,String(v));else removeLine("marks",hcls);syncRaw()});
 $("hglow").addEventListener("change",()=>{const v=+$("hglow").value;if(v)setLine("glow",hcls,String(v));else removeLine("glow",hcls);syncRaw()});
 $("hAll").addEventListener("click",()=>{CLS_ORDER.forEach(c=>{setBeat(c,new Set(ZONES));const m={};ZONES.forEach(z=>m[z]=5);putHb(c,m)});render()});
 $("hNone").addEventListener("click",()=>{CLS_ORDER.forEach(c=>putHb(c,{}));render()});
