@@ -123,6 +123,7 @@ code{background:var(--bg);border:1px solid var(--line);padding:1px 6px;border-ra
 .gtiles{display:grid;grid-template-columns:repeat(auto-fill,minmax(168px,1fr));gap:8px}
 .gt{position:relative;display:flex;align-items:center;gap:10px;padding:8px 10px;min-height:60px;border-radius:10px;border:1px solid var(--line);background:var(--panel2);cursor:pointer;opacity:.6;transition:.12s}
 .gt:hover{opacity:.9}
+.gt select.st{margin-top:4px;font-size:11px;padding:1px 4px;border-radius:6px;width:auto;min-height:0;background:rgba(0,0,0,.4);color:var(--ink);border:1px solid var(--line)}
 .gt svg{width:38px;height:38px;flex:none;padding:5px;border-radius:8px;border:2px solid var(--tc);color:var(--tc);background:rgba(0,0,0,.35)}
 .gt .gn{min-width:0;flex:1;line-height:1.25;padding-right:10px}
 .gt .gn b{display:block;font-size:12.5px;font-weight:600;color:var(--ink);overflow-wrap:break-word;word-break:normal;hyphens:manual}
@@ -138,7 +139,7 @@ code{background:var(--bg);border:1px solid var(--line);padding:1px 6px;border-ra
   <header class="top">
     <div class="brand" id="brand"></div>
     <div><h1>Azeroth Survivors Save Editor</h1><div class="tag">Reads, edits and re-seals your save. Everything runs in this page, and your file is never uploaded.</div></div>
-    <span class="ver">Version 2026-10-31</span>
+    <span class="ver">Version 2026-10-31 10:23</span>
   </header>
 
   <div id="loader" class="drop" tabindex="0" role="button" aria-label="Choose a save file">
@@ -220,7 +221,8 @@ code{background:var(--bg);border:1px solid var(--line);padding:1px 6px;border-ra
     <section id="tab-gear" class="hide">
       <div class="panel"><div id="clsbar2" class="clsbar"></div>
         <div class="row"><button id="gCls">Select all gear (this class)</button><button id="gNone">Clear gear (this class)</button><button id="gAll">Select all gear (every class)</button><button id="gEq">Equip best gear (this class)</button></div>
-        <p style="margin-top:10px"><small>Tap an item to mark it unlocked. Tap a tier button to toggle that tier for every slot, or a slot name to toggle that whole row. Item icons come from Blizzard's item data, which the game doesn't store, so tiles show the slot in the tier's rarity colour.</small></p></div>
+        <div class="row" style="margin-top:8px"><button id="sCls">Max stars (this class)</button><button id="sAll">Max stars (every class)</button><button id="sNone">Clear stars (this class)</button></div>
+        <p style="margin-top:10px"><small>Tap an item to mark it unlocked; unlocked items get a star level (0 to 5) you can change. Max stars only affects gear you have unlocked. Tap a tier button to toggle that tier for every slot, or a slot name to toggle that whole row. Item icons come from Blizzard's item data, which the game doesn't store, so tiles show the slot in the tier's rarity colour.</small></p></div>
       <div class="panel"><div id="gearbox"></div></div>
     </section>
     <section id="tab-ach" class="hide">
@@ -335,7 +337,7 @@ function seal(plain,header){
 const ZONES=["elwynn","duskwood","wsg","ungoro","ab","feralas","arena","sm","av","brm","aq","naxx"]; // order taken from the game (new version)
 const ZONE_NAMES={elwynn:"Elwynn Forest",duskwood:"Duskwood",wsg:"Warsong Gulch",ab:"Arathi Basin",feralas:"Feralas",arena:"Arena",av:"Alterac Valley",brm:"Blackrock Mountain",aq:"Ahn'Qiraj",ungoro:"Un'Goro Crater",sm:"Scarlet Monastery",naxx:"Naxxramas"};
 const CLASS_NAMES={1:"Warrior",2:"Paladin",3:"Hunter",4:"Rogue",5:"Priest",6:"Death Knight",7:"Shaman",8:"Mage",9:"Warlock",11:"Druid"};
-const KNOWN_KEYS=["pick","spec","open","unlock","items","equip","look","talent","seen","ach","achat","stat","beat","perk","tabard","pets","resets","hero","races","marks","pity","glow","hbeat"];
+const KNOWN_KEYS=["pick","spec","open","unlock","items","equip","look","talent","seen","ach","achat","stat","beat","perk","tabard","pets","resets","hero","races","marks","pity","glow","hbeat","stars"];
 const STAT_LABELS={kills:"Kills",gold:"Gold",guardians:"Guardians slain",bosses:"Bosses slain",runs:"Runs",wins:"Wins",caches:"Caches opened",marks:"Marks earned"};
 
 let L=[];            // the save, one string per line
@@ -561,6 +563,9 @@ $("tMax").addEventListener("click",()=>{const r={};treesOf(hcls).flat().forEach(
 $("tClr").addEventListener("click",()=>{setRanks(hcls,{});render()});
 $("gCls").addEventListener("click",()=>{gearAdd([hcls]);render()});
 $("gNone").addEventListener("click",()=>{const o=ownedItems();[...o].forEach(i=>{if(Math.floor(i/1000)%100===+hcls)o.delete(i)});putItems(o);render()});
+$("sCls").addEventListener("click",()=>{maxStars([+hcls],5);render()});
+$("sAll").addEventListener("click",()=>{maxStars(CLS_ORDER,5);render()});
+$("sNone").addEventListener("click",()=>{const m=starMap();Object.keys(m).forEach(k=>{if(Math.floor(k/1000)%100===+hcls)delete m[k]});putStars(m);render()});
 $("gAll").addEventListener("click",()=>{gearAdd(CLS_ORDER);render()});
 $("gEq").addEventListener("click",()=>{gearAdd([hcls]);ensureHero(hcls);setLine("equip",hcls,SLOT_IDS.map((s,i)=>(s===15?WEAPON_SLOT(+hcls):s)+":"+gearId(hcls,i,4)).concat(OFFHAND.includes(+hcls)?["16:"+gearId(hcls,9,4)]:[]).join(","));render()});
 
@@ -626,7 +631,11 @@ const GL=["M5 14a7 7 0 0 1 14 0v4h-3v-3H8v3H5z","M3 15c0-5 4-8 9-8s9 3 9 8l-3 2c
 const glyph=s=>`<svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="${GL[s]}"/></svg>`;
 function hasSlot(c,s){return s<=8||(s===9&&OFFHAND.includes(+c))}
 function ownedItems(){const i=find("items");return new Set(i>=0?(L[i].split("|")[1]||"").split(",").filter(Boolean).map(Number):[])}
-function putItems(set){setLine("items",undefined,[...set].sort((a,b)=>a-b).join(","))}
+function starMap(){const i=find("stars"),m={};if(i>=0)(L[i].split("|")[1]||"").split(",").filter(Boolean).forEach(x=>{const [k,v]=x.split(":");m[+k]=+v});return m}
+function putStars(m){const s=Object.keys(m).map(Number).filter(k=>m[k]>0).sort((a,b)=>a-b).map(k=>k+":"+m[k]).join(",");if(s)setLine("stars",undefined,s);else removeLine("stars")}
+function putItems(set){setLine("items",undefined,[...set].sort((a,b)=>a-b).join(","));
+  const m=starMap(),ks=Object.keys(m).map(Number);if(ks.some(k=>!set.has(k))){ks.forEach(k=>{if(!set.has(k))delete m[k]});putStars(m)}} // stars only exist on owned gear
+function maxStars(classes,lvl){const o=ownedItems(),m=starMap();o.forEach(i=>{if(classes.includes(Math.floor(i/1000)%100))m[i]=lvl});putStars(m)}
 function gearInfo(c,s,t){const k=CLS_KEY[c],ty=GEAR.at[k],r=GEAR.r[t];
   if(s<8){const n=GEAR.n[ty][s];return t===5?["PvP "+n,"Field Marshal's / Warlord's"]:[GEAR.s[k][t]+" "+n,r]}
   if(t===5){const w=GEAR.pw[k]||[];const nm=s===8?[w[0],w[1]].filter(Boolean).join(" / "):(+c===7?"High Warlord's Shield Wall":"PvP off-hand");return [nm||"PvP weapon","PvP"]}
@@ -635,15 +644,17 @@ function renderGear(){
   const ids=classIds(); if(hcls===null||!ids.includes(hcls)) hcls=ids[0];
   $("clsbar2").innerHTML=ids.map(c=>`<button class="clsbtn" data-c="${c}" aria-pressed="${c===hcls}">${clsIco(c)}<span>${CLASS_NAMES[c]}</span></button>`).join("");
   $("clsbar2").querySelectorAll("button").forEach(b=>b.addEventListener("click",()=>{hcls=+b.dataset.c;renderHeroes();renderGear()}));
-  const own=ownedItems(), slots=[...Array(10).keys()].filter(s=>hasSlot(hcls,s));
+  const own=ownedItems(), SM=starMap(), slots=[...Array(10).keys()].filter(s=>hasSlot(hcls,s));
   let out='<div class="gtiers"><span class="meta">Toggle a whole tier:</span>'+TIER_ORDER.map(t=>`<button class="gtier" data-ht="${t}" style="--tc:${TCOL[t]}">${GEAR.r[t]}</button>`).join("")+'</div>';
   out+=slots.map(s=>`<section class="gslot"><h3 data-hs="${s}">${SLOT_NAMES[s]}<small>toggle row</small></h3><div class="gtiles">`+TIER_ORDER.map(t=>{
     const id=gearId(hcls,s,t),[nm,sub]=gearInfo(hcls,s,t);
-    return `<div class="gt${own.has(id)?" on":""}" data-id="${id}" style="--tc:${TCOL[t]}" role="button" tabindex="0" aria-pressed="${own.has(id)}">${glyph(s)}<div class="gn"><b>${nm}</b><span>${sub}</span></div><i class="ck">\u2713</i></div>`}).join("")+'</div></section>').join("");
+    return `<div class="gt${own.has(id)?" on":""}" data-id="${id}" style="--tc:${TCOL[t]}" role="button" tabindex="0" aria-pressed="${own.has(id)}">${glyph(s)}<div class="gn"><b>${nm}</b><span>${sub}</span>${own.has(id)?`<select class="st" data-sid="${id}" aria-label="Stars">${[0,1,2,3,4,5].map(v=>`<option value="${v}"${(SM[id]||0)===v?" selected":""}>${v} \u2605</option>`).join("")}</select>`:""}</div><i class="ck">\u2713</i></div>`}).join("")+'</div></section>').join("");
   $("gearbox").innerHTML=out;
   const slotIds=f=>{const r=[];slots.forEach(s=>[0,1,2,3,4,5].forEach(t=>{if(f(s,t))r.push(gearId(hcls,s,t))}));return r};
   const flip=ids=>{const o=ownedItems(),all=ids.every(i=>o.has(i));ids.forEach(i=>all?o.delete(i):o.add(i));ensureHero(hcls);putItems(o);renderGear();syncRaw()};
   $("gearbox").querySelectorAll(".gt").forEach(e=>{const go=()=>flip([+e.dataset.id]);e.addEventListener("click",go);e.addEventListener("keydown",k=>{if(k.key==="Enter"||k.key===" "){k.preventDefault();go()}})});
+  $("gearbox").querySelectorAll("select.st").forEach(s=>{["click","keydown"].forEach(ev=>s.addEventListener(ev,e=>e.stopPropagation()));
+    s.addEventListener("change",()=>{const m=starMap();m[+s.dataset.sid]=+s.value;putStars(m);renderGear();syncRaw()})});
   $("gearbox").querySelectorAll(".gtier").forEach(e=>e.addEventListener("click",()=>flip(slotIds((s,t)=>t===+e.dataset.ht))));
   $("gearbox").querySelectorAll("h3").forEach(e=>e.addEventListener("click",()=>flip(slotIds((s,t)=>s===+e.dataset.hs))));
 }
