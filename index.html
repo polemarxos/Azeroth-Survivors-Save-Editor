@@ -3,7 +3,39 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Azeroth Survivors Save Editor</title>
+<meta name="description" content="Free online Azeroth Survivors Save Editor. Edit your save file, hero progression, zones, perks, gear, achievements, pets, tabards and codex directly in your browser. Your save file is not uploaded.">
+<meta name="robots" content="index, follow">
+<link rel="canonical" href="https://polemarxos.github.io/Azeroth-Survivors-Save-Editor/">
+<meta name="theme-color" content="#0e1319">
+
+<meta property="og:type" content="website">
+<meta property="og:title" content="Azeroth Survivors Save Editor">
+<meta property="og:description" content="Edit Azeroth Survivors save files online. Manage heroes, zones, perks, gear, achievements, pets and more in your browser.">
+<meta property="og:url" content="https://polemarxos.github.io/Azeroth-Survivors-Save-Editor/">
+<meta property="og:site_name" content="Azeroth Survivors Save Editor">
+
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="Azeroth Survivors Save Editor">
+<meta name="twitter:description" content="Free browser-based save editor for Azeroth Survivors. Your save file stays on your device.">
+
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "SoftwareApplication",
+  "name": "Azeroth Survivors Save Editor",
+  "applicationCategory": "GameApplication",
+  "operatingSystem": "Any",
+  "url": "https://polemarxos.github.io/Azeroth-Survivors-Save-Editor/",
+  "description": "A free browser-based tool for editing Azeroth Survivors save files, including hero progression, zones, heroic progress, perks, gear, achievements, pets, tabards and codex entries. Save files are processed in the browser and are not uploaded.",
+  "offers": {
+    "@type": "Offer",
+    "price": "0",
+    "priceCurrency": "USD"
+  },
+  "browserRequirements": "Requires a modern web browser with JavaScript enabled"
+}
+</script>
+<title>Azeroth Survivors Save Editor – Free Online Save File Editor</title>
 <style>
 :root{
   --bg:#0e1319; --bg2:#141b23; --panel:#18212b; --panel2:#1d2833; --ink:#e8edf2; --muted:#93a1b0; --line:#2a3745; --line2:#374657;
@@ -132,7 +164,16 @@ code{background:var(--bg);border:1px solid var(--line);padding:1px 6px;border-ra
 .gt.on{opacity:1;border-color:var(--tc);background:linear-gradient(90deg,rgba(255,255,255,.06),transparent)}
 .gt.on .ck{background:var(--ok);border-color:var(--ok);color:#06210f}
 @media (max-width:520px){main{padding:0 12px 90px}.bar{margin:0 -12px;padding:12px}.cls{grid-template-columns:1fr}.cls .nm{flex-direction:row;align-items:center;justify-content:space-between}.cls .grid{grid-template-columns:repeat(auto-fill,minmax(min(170px,100%),1fr))}.gt{gap:8px;padding:8px}.gt .gn b{font-size:12px;padding-right:12px}.gt svg{width:34px;height:34px}.drop{padding:34px 14px}.top{flex-wrap:wrap}.ver{margin-left:0}.panel{padding:14px}.gtiles{grid-template-columns:repeat(2,minmax(0,1fr))}}
-#specbar{display:flex;gap:6px;flex-wrap:wrap;align-items:center;margin-bottom:14px}</style>
+#specbar{display:flex;gap:6px;flex-wrap:wrap;align-items:center;margin-bottom:14px}
+/* Search-friendly project information */
+.seo-info{margin-top:22px}
+.seo-info h2{font-size:15px;letter-spacing:.04em;text-transform:none;margin:0 0 10px}
+.seo-info h3{font-size:14px;color:var(--gold2);margin:18px 0 7px}
+.seo-info p,.seo-info li{color:var(--muted);line-height:1.65}
+.seo-info ul,.seo-info ol{padding-left:22px;margin:7px 0 12px}
+.seo-info a{color:var(--gold2)}
+
+</style>
 </head>
 <body>
 <main>
@@ -266,6 +307,51 @@ code{background:var(--bg);border:1px solid var(--line);padding:1px 6px;border-ra
       <p><small>Importing replaces all progress with the file’s contents. Keep your original export as a backup.</small></p>
     </div>
   </div>
+
+  <section class="panel seo-info" aria-labelledby="about-editor">
+    <h2 id="about-editor">About the Azeroth Survivors Save Editor</h2>
+    <p>
+      The Azeroth Survivors Save Editor is a free browser-based tool for
+      reading and editing exported Azeroth Survivors save files. It also
+      supports the game's <code>characters.txt</code> file. The editor runs
+      in your browser; your selected save file is not uploaded to a server.
+    </p>
+
+    <h3>What can you edit?</h3>
+    <ul>
+      <li><strong>Player status:</strong> view and edit save statistics such as kills, gold, runs and wins when those records are present.</li>
+      <li><strong>Zones and Heroic Zones:</strong> change cleared-zone progress and each class's Heroic difficulty progress.</li>
+      <li><strong>Perks:</strong> adjust perk levels and open races to every class.</li>
+      <li><strong>Heroes and talents:</strong> edit hero experience, marks, race, gender, weapon glow and talent allocations.</li>
+      <li><strong>Gear:</strong> unlock equipment, change star levels and equip the best gear for a class.</li>
+      <li><strong>Achievements and collections:</strong> manage achievements, pets, tabards and appearances.</li>
+      <li><strong>Codex and raw save text:</strong> edit codex entries or work directly with the save's plain-text records.</li>
+    </ul>
+
+    <h3>How to use the save editor</h3>
+    <ol>
+      <li>Export your save from Azeroth Survivors, or locate <code>characters.txt</code> in <code>%APPDATA%\wenilla-rogue</code>.</li>
+      <li>Drop the save file into the upload area above, or click it to choose a file.</li>
+      <li>Use the editor tabs to change the progress and records you want to modify.</li>
+      <li>Select <strong>Download edited save</strong> to create your updated save file.</li>
+      <li>In the game, open <strong>Options → Saves</strong>, place the downloaded <code>.sav</code> file in the displayed folder, select it and press <strong>Import</strong>.</li>
+    </ol>
+
+    <h3>Does the editor upload my save file?</h3>
+    <p>
+      No. The save is read and modified by JavaScript in your browser.
+      The editor creates the modified file locally for you to download.
+      Keep a backup of your original save before importing changes into the game.
+    </p>
+
+    <h3>Supported save files</h3>
+    <p>
+      The editor is designed for exported <code>.sav</code> files and the
+      game's <code>characters.txt</code> file. If a save format changes in a
+      future game update, make a backup and verify the downloaded save in-game.
+    </p>
+  </section>
+
 </main>
 
 <script>

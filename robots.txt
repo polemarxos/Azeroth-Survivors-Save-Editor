@@ -1,0 +1,4 @@
+User-agent: *
+Allow: /
+
+Sitemap: https://polemarxos.github.io/Azeroth-Survivors-Save-Editor/sitemap.xml
