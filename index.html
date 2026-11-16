@@ -3,39 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<meta name="description" content="Free online Azeroth Survivors Save Editor. Edit your save file, hero progression, zones, perks, gear, achievements, pets, tabards and codex directly in your browser. Your save file is not uploaded.">
-<meta name="robots" content="index, follow">
-<link rel="canonical" href="https://polemarxos.github.io/Azeroth-Survivors-Save-Editor/">
-<meta name="theme-color" content="#0e1319">
-
-<meta property="og:type" content="website">
-<meta property="og:title" content="Azeroth Survivors Save Editor">
-<meta property="og:description" content="Edit Azeroth Survivors save files online. Manage heroes, zones, perks, gear, achievements, pets and more in your browser.">
-<meta property="og:url" content="https://polemarxos.github.io/Azeroth-Survivors-Save-Editor/">
-<meta property="og:site_name" content="Azeroth Survivors Save Editor">
-
-<meta name="twitter:card" content="summary">
-<meta name="twitter:title" content="Azeroth Survivors Save Editor">
-<meta name="twitter:description" content="Free browser-based save editor for Azeroth Survivors. Your save file stays on your device.">
-
-<script type="application/ld+json">
-{
-  "@context": "https://schema.org",
-  "@type": "SoftwareApplication",
-  "name": "Azeroth Survivors Save Editor",
-  "applicationCategory": "GameApplication",
-  "operatingSystem": "Any",
-  "url": "https://polemarxos.github.io/Azeroth-Survivors-Save-Editor/",
-  "description": "A free browser-based tool for editing Azeroth Survivors save files, including hero progression, zones, heroic progress, perks, gear, achievements, pets, tabards and codex entries. Save files are processed in the browser and are not uploaded.",
-  "offers": {
-    "@type": "Offer",
-    "price": "0",
-    "priceCurrency": "USD"
-  },
-  "browserRequirements": "Requires a modern web browser with JavaScript enabled"
-}
-</script>
-<title>Azeroth Survivors Save Editor – Free Online Save File Editor</title>
+<title>Azeroth Survivors Save Editor</title>
 <style>
 :root{
   --bg:#0e1319; --bg2:#141b23; --panel:#18212b; --panel2:#1d2833; --ink:#e8edf2; --muted:#93a1b0; --line:#2a3745; --line2:#374657;
@@ -115,6 +83,15 @@ label.f input,label.f select{margin-top:4px}
 .perk{display:grid;grid-template-columns:36px 1fr 70px;gap:12px;align-items:center;margin-bottom:8px}
 .perk .pn{font-size:13.5px}
 .perk .pn small{display:block}
+dialog#chkdlg{width:min(680px,94vw);max-height:88vh;overflow:auto;background:var(--panel);color:var(--ink);border:1px solid var(--line2);border-radius:14px;padding:18px}
+dialog#chkdlg::backdrop{background:rgba(0,0,0,.6)}
+#chkdlg h3{margin:0 0 6px;font-size:17px}
+#chklist{list-style:none;padding:0;margin:12px 0}
+#chklist li{border:1px solid var(--line);border-left:4px solid var(--warn);border-radius:8px;padding:9px 12px;margin-bottom:9px;background:var(--panel2)}
+#chklist li.error{border-left-color:var(--bad)}
+#chklist .cd{font-size:13px;color:var(--muted);margin:4px 0 2px 24px}
+#chklist .cr{font-size:13px;color:var(--ok);margin-left:24px}
+#chkdlg .row{display:flex;gap:8px;flex-wrap:wrap}
 .hide{display:none!important}
 .bar{position:sticky;bottom:0;z-index:5;background:color-mix(in srgb,var(--bg) 92%,transparent);backdrop-filter:blur(8px);border-top:1px solid var(--line);padding:12px 18px;margin:0 -18px}
 .bar .row{align-items:center}
@@ -164,23 +141,14 @@ code{background:var(--bg);border:1px solid var(--line);padding:1px 6px;border-ra
 .gt.on{opacity:1;border-color:var(--tc);background:linear-gradient(90deg,rgba(255,255,255,.06),transparent)}
 .gt.on .ck{background:var(--ok);border-color:var(--ok);color:#06210f}
 @media (max-width:520px){main{padding:0 12px 90px}.bar{margin:0 -12px;padding:12px}.cls{grid-template-columns:1fr}.cls .nm{flex-direction:row;align-items:center;justify-content:space-between}.cls .grid{grid-template-columns:repeat(auto-fill,minmax(min(170px,100%),1fr))}.gt{gap:8px;padding:8px}.gt .gn b{font-size:12px;padding-right:12px}.gt svg{width:34px;height:34px}.drop{padding:34px 14px}.top{flex-wrap:wrap}.ver{margin-left:0}.panel{padding:14px}.gtiles{grid-template-columns:repeat(2,minmax(0,1fr))}}
-#specbar{display:flex;gap:6px;flex-wrap:wrap;align-items:center;margin-bottom:14px}
-/* Search-friendly project information */
-.seo-info{margin-top:22px}
-.seo-info h2{font-size:15px;letter-spacing:.04em;text-transform:none;margin:0 0 10px}
-.seo-info h3{font-size:14px;color:var(--gold2);margin:18px 0 7px}
-.seo-info p,.seo-info li{color:var(--muted);line-height:1.65}
-.seo-info ul,.seo-info ol{padding-left:22px;margin:7px 0 12px}
-.seo-info a{color:var(--gold2)}
-
-</style>
+#specbar{display:flex;gap:6px;flex-wrap:wrap;align-items:center;margin-bottom:14px}</style>
 </head>
 <body>
 <main>
   <header class="top">
     <div class="brand" id="brand"></div>
     <div><h1>Azeroth Survivors Save Editor</h1><div class="tag">Reads, edits and re-seals your save. Everything runs in this page, and your file is never uploaded.</div></div>
-    <span class="ver">Version 2026-11-07 10:25</span>
+    <span class="ver">Version 2026-11-16 20:10</span>
   </header>
 
   <div id="loader" class="drop" tabindex="0" role="button" aria-label="Choose a save file">
@@ -298,6 +266,7 @@ code{background:var(--bg);border:1px solid var(--line);padding:1px 6px;border-ra
 
     <div class="bar row">
       <button id="save" class="primary">Download edited save</button>
+      <button id="checkbtn">Check save for problems</button>
       <button id="reload">Open a different file</button>
       <small id="hint"></small>
     </div>
@@ -307,53 +276,10 @@ code{background:var(--bg);border:1px solid var(--line);padding:1px 6px;border-ra
       <p><small>Importing replaces all progress with the file’s contents. Keep your original export as a backup.</small></p>
     </div>
   </div>
-
-  <section class="panel seo-info" aria-labelledby="about-editor">
-    <h2 id="about-editor">About the Azeroth Survivors Save Editor</h2>
-    <p>
-      The Azeroth Survivors Save Editor is a free browser-based tool for
-      reading and editing exported Azeroth Survivors save files. It also
-      supports the game's <code>characters.txt</code> file. The editor runs
-      in your browser; your selected save file is not uploaded to a server.
-    </p>
-
-    <h3>What can you edit?</h3>
-    <ul>
-      <li><strong>Player status:</strong> view and edit save statistics such as kills, gold, runs and wins when those records are present.</li>
-      <li><strong>Zones and Heroic Zones:</strong> change cleared-zone progress and each class's Heroic difficulty progress.</li>
-      <li><strong>Perks:</strong> adjust perk levels and open races to every class.</li>
-      <li><strong>Heroes and talents:</strong> edit hero experience, marks, race, gender, weapon glow and talent allocations.</li>
-      <li><strong>Gear:</strong> unlock equipment, change star levels and equip the best gear for a class.</li>
-      <li><strong>Achievements and collections:</strong> manage achievements, pets, tabards and appearances.</li>
-      <li><strong>Codex and raw save text:</strong> edit codex entries or work directly with the save's plain-text records.</li>
-    </ul>
-
-    <h3>How to use the save editor</h3>
-    <ol>
-      <li>Export your save from Azeroth Survivors, or locate <code>characters.txt</code> in <code>%APPDATA%\wenilla-rogue</code>.</li>
-      <li>Drop the save file into the upload area above, or click it to choose a file.</li>
-      <li>Use the editor tabs to change the progress and records you want to modify.</li>
-      <li>Select <strong>Download edited save</strong> to create your updated save file.</li>
-      <li>In the game, open <strong>Options → Saves</strong>, place the downloaded <code>.sav</code> file in the displayed folder, select it and press <strong>Import</strong>.</li>
-    </ol>
-
-    <h3>Does the editor upload my save file?</h3>
-    <p>
-      No. The save is read and modified by JavaScript in your browser.
-      The editor creates the modified file locally for you to download.
-      Keep a backup of your original save before importing changes into the game.
-    </p>
-
-    <h3>Supported save files</h3>
-    <p>
-      The editor is designed for exported <code>.sav</code> files and the
-      game's <code>characters.txt</code> file. If a save format changes in a
-      future game update, make a backup and verify the downloaded save in-game.
-    </p>
-  </section>
-
 </main>
 
+<dialog id="chkdlg"><h3 id="chkhead"></h3><p class="sub" id="chkintro"></p><ul id="chklist"></ul>
+  <div class="row"><button id="chkfix" class="primary">Fix ticked problems and download</button><button id="chkgo"></button><button id="chkcancel">Cancel</button></div></dialog>
 <script>
 /* ---------- crypto: SHA-1 + HMAC-SHA1 (pure JS, no dependencies) ---------- */
 function sha1(msg){
@@ -542,8 +468,11 @@ function validate(){
   return problems;
 }
 function download(){
-  const probs=validate();
-  if(probs.length && !confirm("Some lines look wrong:\n\n"+probs.slice(0,8).join("\n")+"\n\nSave anyway?")) return;
+  const issues=checkSave();
+  if(issues.length){showCheck(issues,true);return}
+  doDownload();
+}
+function doDownload(){
   const text=L.join('\n');
   const blob=new Blob([seal(text)],{type:"text/plain"});
   const d=new Date(), p=n=>String(n).padStart(2,'0');
@@ -551,8 +480,6 @@ function download(){
   const a=document.createElement("a"); a.href=URL.createObjectURL(blob); a.download=name; document.body.appendChild(a); a.click(); a.remove();
   $("hint").textContent=`Saved as ${name}`;
 }
-
-
 /* ---------- data read from the game files ---------- */
 const CLS_ORDER=[1,2,3,4,5,7,8,9,11];
 const TREES="imp_heroic:5:0:0,deflection:5:0:1,imp_rend:3:1:0,tactical_mastery:5:1:2,deep_wounds:1:2:1,anger_management:3:2:2,impale:3:3:0,two_hand_spec:5:3:2,sweeping_strikes:1:4:1,imp_execute:3:4:2,sword_spec:5:5:0,weapon_mastery:3:5:2,mortal_wounds:1:6:1|cruelty:5:0:1,booming_voice:5:0:2,unbridled_wrath:5:1:0,imp_battle_shout:3:1:2,rampage:1:2:1,imp_cleave:3:2:2,dual_wield_spec:5:3:0,imp_whirlwind:3:3:2,flurry:1:4:1,death_wish:3:4:2,blood_craze:3:5:0,imp_berserker:5:5:2,bladestorm:1:6:1|shield_spec:5:0:0,anticipation:5:0:2,imp_thunder_clap:3:1:0,toughness:5:1:2,heavy_shield:3:2:0,shockwave:1:2:1,imp_demo_shout:3:2:2,defiance:3:3:0,imp_shield_slam:3:3:2,shield_mastery:3:4:0,fortified:1:4:1,last_stand:1:5:0,unbreakable:3:5:2,titan:1:6:1|divine_strength:5:0:1,divine_intellect:5:0:2,healing_light:3:1:0,imp_seal:5:1:2,divine_favor:1:2:1,unyielding_faith:3:2:2,holy_power:5:3:0,lasting_judgement:3:3:2,daybreak:1:4:1,sanctified_light:5:4:2,holy_guidance:3:5:0,purifying_power:3:5:2,lights_grace:1:6:1|imp_devotion:5:0:0,redoubt:5:0:2,imp_consecration:3:1:0,spiritual_attunement:3:1:2,weighted_hammer:3:2:0,hallowed_ground:1:2:1,judgement_crusader:3:2:2,righteous_fury:3:3:0,imp_hoj:3:3:2,blessed_life:3:4:0,ardent_defender:1:4:1,divine_intervention:1:5:0,sacred_duty:3:5:2,hammer_righteous:1:6:1|imp_might:5:0:1,benediction:5:0:2,imp_judgement:3:1:0,deflection_pal:5:1:2,seal_of_command:1:2:1,pursuit:2:2:2,conviction:5:3:0,righteous_hammer:3:3:2,art_of_war:1:4:1,sanctity_aura:3:4:2,eye_for_an_eye:3:5:0,vindication:3:5:2,divine_storm:1:6:1|imp_hawk:5:0:1,endurance_training:5:0:2,imp_monkey:5:1:0,pathfinding:2:1:2,tame_beast:1:2:1,unleashed_fury:5:2:2,ferocity_hunter:5:3:0,spirit_bond:2:3:2,frenzy_hunter:1:4:1,bestial_discipline:3:4:2,intimidation:3:5:0,ferocious_inspiration:3:5:2,bestial_wrath:1:6:1|lethal_shots:5:0:1,efficiency:5:0:2,imp_arcane_shot:5:1:0,imp_serpent_sting:5:1:2,piercing_shots:1:2:1,mortal_shots:5:2:2,ranged_spec:5:3:0,imp_multi_shot:2:3:2,rapid_fire:1:4:1,barrage:3:4:2,hawk_eye:3:5:0,scatter_shot:3:5:2,kill_shot:1:6:1|monster_slaying:5:0:1,deflection_hunter:5:0:2,clever_traps:3:1:0,survivalist:5:1:2,entrapment:1:2:1,savage_strikes:3:2:2,trap_mastery:3:3:0,surefooted:3:3:2,explosive_ammo:1:4:1,killer_instinct:3:4:2,lightning_reflexes:5:5:0,counterattack:2:5:2,wyvern_sting:1:6:1|imp_eviscerate:5:0:1,malice:5:0:2,ruthlessness:3:1:0,murder:5:1:2,deadly_poison:1:2:1,lethality:5:2:2,imp_poisons:5:3:0,vile_poisons:5:3:2,mutilate:1:4:1,seal_fate:3:4:2,vigor:3:5:0,remorseless:3:5:2,toxic_bloom:1:6:1|precision_rogue:5:0:1,lightning_reflexes_rogue:5:0:2,imp_sinister:3:1:0,endurance_rogue:5:1:2,blade_flurry_talent:1:2:1,dual_wield_rogue:5:2:2,sword_spec_rogue:5:3:0,weapon_expertise:3:3:2,adrenaline:1:4:1,aggression:3:4:2,imp_slice_dice:3:5:0,riposte:2:5:2,killing_spree:1:6:1|master_deception:5:0:1,opportunity:5:0:2,elusiveness:3:1:0,initiative:5:1:2,cheat_death:1:2:1,imp_ambush:3:2:2,serrated_blades:3:3:0,setup:3:3:2,preparation:1:4:1,dirty_deeds:3:4:2,deadliness:5:5:0,heightened_senses:2:5:2,shadow_dance:1:6:1|unbreakable_will:5:0:1,wand_spec:5:0:2,imp_pw_shield:3:1:0,martyrdom:5:1:2,divine_aegis:1:2:1,mental_agility:5:2:2,meditation:3:3:0,mental_strength:5:3:2,rapture:1:4:1,force_of_will:5:4:2,silent_resolve:3:5:0,imp_inner_fire:3:5:2,penance:1:6:1|holy_spec:5:0:1,imp_renew:5:0:2,divine_fury:5:1:0,holy_reach:3:1:2,holy_nova_talent:1:2:1,inspiration:3:2:2,searing_light:3:3:0,spiritual_guidance:5:3:2,holy_fire_talent:1:4:1,spiritual_healing:3:4:2,blessed_recovery:3:5:0,holy_concentration:3:5:2,chastise:1:6:1|spirit_tap:5:0:1,blackout:5:0:2,imp_swp:2:1:0,shadow_focus:5:1:2,shadow_weaving:1:2:1,imp_mind_blast:5:2:2,darkness:5:3:0,imp_psychic_scream:2:3:2,shadowy_apparitions:1:4:1,shadow_reach:3:4:2,shadow_power:3:5:0,imp_vampiric:3:5:2,shadowform:1:6:1|convection:5:0:1,concussion:5:0:2,earths_grasp:3:1:0,call_of_flame:3:1:2,lightning_overload:1:2:1,reverberation:5:2:2,call_of_thunder:5:3:0,imp_fire_totems:2:3:2,elemental_fury:1:4:1,lightning_mastery:5:4:2,storm_reach:2:5:0,elemental_devastation:3:5:2,elemental_mastery:1:6:1|enh_thundering_strikes:5:0:1,enh_earthen_bulwark:5:0:2,enh_resonant_shocks:3:1:0,enh_shattering_elements:3:1:2,rockbiter_initiation:1:2:1,enh_windfury_weapon:3:2:2,enh_flametongue_weapon:3:3:0,enh_frostbrand_weapon:3:3:2,enh_unleashed_weapons:1:4:1,enh_ancestral_fortitude:3:4:2,enh_flurry:3:5:0,enh_sweeping_storm:3:5:2,enh_stormbound_echoes:1:6:1|imp_healing_wave:5:0:1,tidal_focus:5:0:2,totemic_focus:5:1:0,natures_guidance:3:1:2,twin_totems:1:2:1,restorative_totems:3:2:2,tidal_mastery:5:3:0,healing_way:3:3:2,reincarnation:1:4:1,purification:5:4:2,totemic_mastery:3:5:0,ancestral_healing:3:5:2,totemic_call:1:6:1|arcane_focus:5:0:1,arcane_subtlety:5:0:2,imp_arcane_explosion:3:1:0,magic_absorption:5:1:2,arcane_concentration:1:2:1,arcane_meditation:3:2:2,arcane_mind:5:3:0,imp_blink:3:3:2,presence_of_mind:1:4:1,arcane_instability:3:4:2,arcane_fortitude:3:5:0,arcane_reach:3:5:2,arcane_power:1:6:1|imp_fireball:5:0:1,impact:5:0:2,flame_throwing:2:1:0,imp_flamestrike:5:1:2,ignite:1:2:1,incinerate:3:2:2,master_elements:3:3:0,critical_mass:3:3:2,hot_streak:1:4:1,fire_power:5:4:2,burning_soul:3:5:0,imp_blast_wave:3:5:2,pyroclasm:1:6:1|frost_warding:5:0:1,imp_frostbolt:5:0:2,elemental_precision:3:1:0,ice_shards:5:1:2,frostbite:1:2:1,piercing_ice:3:2:2,shatter:5:3:0,arctic_reach:2:3:2,splitting_ice:1:4:1,frost_channeling:3:4:2,permafrost:3:5:0,imp_ice_barrier:3:5:2,water_elemental:1:6:1|suppression:5:0:1,imp_corruption:5:0:2,imp_coa:3:1:0,imp_drain_life:5:1:2,nightfall:1:2:1,dark_pact:3:2:2,grim_reach:1:3:0,shadow_mastery:5:3:2,contagion:1:4:1,amplify_curse:3:4:2,siphon_life:1:5:0,fel_concentration:3:5:2,seed_of_corruption:1:6:1|demonic_familiar:5:0:1,demonic_embrace:5:0:2,fel_stamina:3:1:0,unholy_power:5:1:3,soul_devourer:3:2:0,soul_link:3:2:2,felfire_training:3:2:3,master_demonologist:3:3:3,legion_gate:1:4:1,demonic_supremacy:1:4:3,summon_infernal:3:5:0,summon_doomguard:3:5:3,pact_of_the_annihilan:1:6:0,butcher:1:6:2|imp_shadow_bolt:5:0:1,cataclysm:5:0:2,intensity:5:1:0,aftermath:5:1:2,shadowburn:1:2:1,imp_searing_pain:3:2:2,destructive_reach:3:3:0,devastation:5:3:2,conflagrate:1:4:1,emberstorm:5:4:2,ruin:3:5:0,bane:3:5:2,rain_of_chaos:1:6:1|imp_wrath:5:0:1,natures_grasp:3:0:2,imp_moonfire:5:1:0,natural_weapons:5:1:2,omen_of_clarity:1:2:1,vengeance_druid:5:2:2,imp_starfire:3:3:0,moonglow:3:3:2,starfall:1:4:1,imp_hurricane:3:4:2,moonfury:5:5:0,natures_reach:2:5:2,force_of_nature:1:6:1|ferocity_druid:5:0:1,feral_aggression:5:0:2,feral_instinct:3:1:0,brutal_impact:5:1:2,rake:1:2:1,sharpened_claws:3:2:2,predatory_strikes:3:3:0,thick_hide:3:3:2,blood_frenzy:1:4:1,savage_fury:3:4:2,heart_of_wild:5:5:0,primal_fury:2:5:2,leader_of_pack:1:6:0,cat_form:1:6:2|imp_motw:5:0:1,furor:5:0:2,imp_healing_touch:5:1:0,natures_focus:5:1:2,swiftmend:1:2:1,reflection:3:2:2,tranquil_spirit:5:3:0,imp_rejuvenation:3:3:2,tranquility:1:4:1,gift_of_nature:5:4:2,imp_tranquility:3:5:0,natural_shapeshifter:3:5:2,tree_of_life:1:6:1".split("|").map(t=>t.split(",").map(x=>{const [i,m,r,c]=x.split(":");return [i,+m,+r,+c]}));
@@ -748,6 +675,137 @@ function renderGear(){
   $("gearbox").querySelectorAll("h3").forEach(e=>e.addEventListener("click",()=>flip(slotIds((s,t)=>s===+e.dataset.hs))));
 }
 
+/* ---------- save check ---------- */
+const CLASS_RECS=["hero","open","unlock","beat","hbeat","talent","spec","equip","look","marks","glow"];
+const SINGLE_RECS=["pick","items","seen","ach","achat","stat","perk","tabard","races","pets","pity","stars","resets","coopbeat","prep"];
+const GLOW_NEEDS={803:"radiantarmory",1899:"coop:insane",1900:"heroic:naxx5"};
+function itemOk(id){ // gear id = 100000 + class*1000 + slot*100 + tier*10
+  if(!Number.isInteger(id)||id<100000||id>=200000||id%10!==0) return false;
+  const c=Math.floor(id/1000)%100,s=Math.floor(id/100)%10,t=Math.floor(id/10)%10;
+  return CLS_ORDER.includes(c)&&(s<=8||(s===9&&OFFHAND.includes(c)))&&[0,1,2,3,4,5,7].includes(t);
+}
+const nn=v=>/^\d+$/.test(v);
+const kvEq=s=>s===""?[]:s.split(",").map(x=>{const i=x.lastIndexOf("=");return [x.slice(0,i),x.slice(i+1)]}); // ids like class:mage contain a colon, so split on the last = // non-negative whole number
+function checkSave(){
+  const out=[]; const add=(sev,title,detail,fixLabel,fix)=>out.push({sev,title,detail,fixLabel,fix});
+  const rec=(k,c)=>{const i=find(k,c);return i<0?null:L[i].split("|")};
+  const setRec=(k,c,p)=>{const i=find(k,c);if(i>=0)L[i]=p.join("|")};
+  const cn=c=>CLASS_NAMES[c]||("class "+c);
+  // 1. line level
+  const seen={};
+  L.forEach((l,i)=>{ if(l==="")return; const p=l.split("|"),k=p[0];
+    if(!KNOWN_KEYS.includes(k)) add("error",`Unknown record “${k}”`,`Line ${i+1} starts with “${k}”, which this game does not use, so the game may refuse the whole save.`,"Remove the line",()=>{const j=L.indexOf(l);if(j>=0)L.splice(j,1)});
+    if(l.includes("\r")) add("warn","Stray line-break character",`Line ${i+1} (${k}) contains a hidden carriage return that can break reading of that record.`,"Strip it",()=>{L=L.map(x=>x.replace(/\r/g,""))});
+    const id=CLASS_RECS.includes(k)?k+"|"+p[1]:SINGLE_RECS.includes(k)?k:null;
+    if(id){ if(seen[id]) add("error",`Duplicate “${k}” record`,`There are two “${id.replace("|"," for class ")}” lines. The game only reads one of them and it may not be the one you expect.`,"Keep the first, remove the extra",()=>{let n=0;L=L.filter(x=>{const q=x.split("|"),d=CLASS_RECS.includes(q[0])?q[0]+"|"+q[1]:q[0];if(d!==id)return true;return ++n===1})}); seen[id]=1 }
+    if(CLASS_RECS.includes(k)&&!CLS_ORDER.includes(+p[1])) add("error",`Record for unknown class ${p[1]}`,`“${k}” on line ${i+1} refers to class id ${p[1]}, which is not one of the nine playable classes.`,"Remove the line",()=>{L=L.filter(x=>x!==l)});
+  });
+  CLS_ORDER.forEach(c=>{const n=cn(c);
+    // 2. hero
+    const h=rec("hero",c);
+    if(h){ const race=+h[2],g=h[3],ap=(h[4]||"").split(",");
+      if(!racesFor(c).includes(race)) add("warn",`${n}: race not available`,`${n} uses race id ${h[2]}, which this class cannot play (or that you have not unlocked).`,"Set the race to "+RACES[CLASS_RACES[c][0]],()=>{const q=rec("hero",c);q[2]=CLASS_RACES[c][0];setRec("hero",c,q)});
+      if(!(g==="0"||g==="1")) add("warn",`${n}: invalid gender value`,`Gender is “${g}” but must be 0 or 1.`,"Set it to 0",()=>{const q=rec("hero",c);q[3]="0";setRec("hero",c,q)});
+      if(ap.length!==5||ap.some(x=>!nn(x))) add("warn",`${n}: appearance values broken`,`Appearance should be five whole numbers (like 0,0,0,0,0), found “${h[4]}”.`,"Reset appearance",()=>{const q=rec("hero",c);q[4]="0,0,0,0,0";setRec("hero",c,q)});
+    } else if(["open","unlock","beat","hbeat","talent","equip","marks"].some(k=>find(k,c)>=0)) add("error",`${n}: missing hero record`,`${n} has progress saved but no “hero” line, so the game cannot tell who this hero is.`,"Create a default hero",()=>{ensureHero(c)});
+    // 3. zones
+    const b=rec("beat",c), bz=b?(b[2]||"").split(",").filter(Boolean):[];
+    const badz=bz.filter(z=>!ZONES.includes(z));
+    if(badz.length) add("error",`${n}: unknown zone cleared`,`Cleared zones contain “${badz.join(", ")}”, which does not exist in this game version.`,"Remove them",()=>{setBeat(c,new Set(clearedSet(c)));const s=clearedSet(c);badz.forEach(z=>s.delete(z));setBeat(c,s)});
+    if(new Set(bz).size!==bz.length) add("warn",`${n}: zone listed twice`,"The cleared-zone list repeats a zone.","Remove repeats",()=>{setBeat(c,new Set(clearedSet(c)))});
+    const o=rec("open",c);
+    if(o&&!ZONES.includes(o[2])) add("error",`${n}: unlocked zone is invalid`,`The next unlocked zone is “${o[2]}”, which is not a zone in this game.`,"Recompute from cleared zones",()=>{setBeat(c,clearedSet(c))});
+    else if(o&&b){const hi=Math.max(-1,...bz.filter(z=>ZONES.includes(z)).map(z=>ZONES.indexOf(z))),want=Math.min(ZONES.length-1,hi+1);
+      if(ZONES.indexOf(o[2])<want) add("warn",`${n}: next zone is still locked`,`${n} has cleared up to ${ZONE_NAMES[ZONES[hi]]}, but only ${ZONE_NAMES[o[2]]} is unlocked, so ${ZONE_NAMES[ZONES[want]]} stays closed.`,"Unlock "+ZONE_NAMES[ZONES[want]],()=>{setBeat(c,clearedSet(c))})}
+    // 4. heroic
+    const hb=rec("hbeat",c);
+    if(hb){ const parts=(hb[2]||"").split(",").filter(Boolean), bad=[],unb=[];
+      parts.forEach(x=>{const [z,v]=x.split(":");if(!ZONES.includes(z)||!/^[1-5]$/.test(v||""))bad.push(x);else if(!bz.includes(z))unb.push(z)});
+      if(bad.length) add("error",`${n}: invalid Heroic entries`,`These Heroic entries are not valid (zone must exist, level 1 to 5): ${bad.join(", ")}.`,"Remove them",()=>{const q=rec("hbeat",c),k=(q[2]||"").split(",").filter(x=>{const [z,v]=x.split(":");return ZONES.includes(z)&&/^[1-5]$/.test(v||"")});if(k.length){q[2]=k.join(",");setRec("hbeat",c,q)}else removeLine("hbeat",c)});
+      if(unb.length) add("warn",`${n}: Heroic cleared in zones not cleared normally`,`Heroic is set in ${unb.map(z=>ZONE_NAMES[z]).join(", ")} but those zones are not marked as cleared.`,"Mark those zones cleared",()=>{const s=clearedSet(c);unb.forEach(z=>s.add(z));setBeat(c,s)});
+    }
+    // 5. marks
+    const m=rec("marks",c); if(m&&(!nn(m[2]||"")||+m[2]>9999999)) add("warn",`${n}: marks value out of range`,`Marks is “${m[2]}”; it should be a whole number from 0 to 9,999,999.`,"Set it to "+(nn(m[2]||"")?"9,999,999":"0"),()=>{const q=rec("marks",c);q[2]=nn(q[2]||"")?"9999999":"0";setRec("marks",c,q)});
+    // 6. talents
+    const valid={};treesOf(c).flat().forEach(t=>valid[t[0]]=+t[1]);
+    const chkRanks=(s,label,apply)=>{ const bad=[],over=[],r=[];
+      (s||"").split(",").filter(Boolean).forEach(x=>{const [k,v]=x.split(":");
+        if(!(k in valid)) bad.push(k); else if(!/^\d+$/.test(v||"")||+v<1) bad.push(k+":"+v); else if(+v>valid[k]) over.push(`${pretty(k)} ${v}/${valid[k]}`);});
+      const ex=Object.keys(parseRanks(s)).filter(k=>EXCL[k]&&parseRanks(s)[EXCL[k]]>0&&k<EXCL[k]);
+      if(bad.length) add("error",`${n}: ${label} has talents that do not belong`,`Not valid for ${n} or has a broken rank: ${bad.map(pretty).join(", ")}.`,"Remove them",()=>apply(rk=>{const o={};Object.entries(rk).forEach(([k,v])=>{if(k in valid&&v>=1)o[k]=v});return o}));
+      if(over.length) add("warn",`${n}: ${label} has ranks above the maximum`,`Over the limit: ${over.join(", ")}.`,"Lower them to the maximum",()=>apply(rk=>{Object.keys(rk).forEach(k=>{if(k in valid&&rk[k]>valid[k])rk[k]=valid[k]});return rk}));
+      ex.forEach(k=>add("warn",`${n}: ${label} has two exclusive talents`,`${pretty(k)} and ${pretty(EXCL[k])} cannot both be taken.`,`Remove ${pretty(EXCL[k])}`,()=>apply(rk=>{delete rk[EXCL[k]];return rk})));
+    };
+    const t=rec("talent",c);
+    if(t){ if(!nn(t[2]||"")) add("error",`${n}: talent experience is not a number`,`Talent XP is “${t[2]}”.`,"Set it to 0",()=>{const q=rec("talent",c);q[2]="0";setRec("talent",c,q)});
+      chkRanks(t[3],"talents",f=>{const q=rec("talent",c);const rk=f(parseRanks(q[3]));q[3]=ranksStr(rk);setRec("talent",c,q);syncSpec(c,q[3])});}
+    const sp=rec("spec",c);
+    if(sp){ const cnt=sp.length-3,a=+sp[2];
+      if(!(a>=0&&a<cnt)) add("error",`${n}: active talent spec is invalid`,`Active spec number is “${sp[2]}” but only ${cnt} spec slot(s) exist.`,"Use spec 1",()=>{const q=rec("spec",c);q[2]="0";setRec("spec",c,q)});
+      else if(t&&(t[3]||"")!==(sp[3+a]||"")&&ranksStr(parseRanks(t[3]))!==ranksStr(parseRanks(sp[3+a]))) add("warn",`${n}: talents differ from the active spec`,`The talent list does not match active spec ${a+1}; the game may revert to the spec copy next time you play.`,"Copy talents into the spec",()=>{const q=rec("spec",c);q[3+a]=ranksStr(parseRanks(rec("talent",c)[3]));setRec("spec",c,q)});
+      for(let j=0;j<cnt;j++) chkRanks(sp[3+j],`spec ${j+1}`,f=>{const q=rec("spec",c);q[3+j]=ranksStr(f(parseRanks(q[3+j])));setRec("spec",c,q)});
+    }
+  });
+  // 7. items / stars / equip
+  const it=rec("items"), items=(it&&it[1]||"").split(",").filter(Boolean);
+  const own=new Set(items.map(Number));
+  const badI=items.filter(x=>!itemOk(+x));
+  if(badI.length) add("error","Unlocked gear contains invalid item ids",`${badI.length} id(s) do not match any real gear piece (${badI.slice(0,6).join(", ")}${badI.length>6?", …":""}). Wrong gear ids can crash the game's armory.`,"Remove them",()=>{putItems(new Set([...ownedItems()].filter(itemOk)))});
+  if(new Set(items).size!==items.length) add("warn","Gear list has repeated ids","Some items are listed more than once.","Remove repeats",()=>{putItems(ownedItems())});
+  const st=rec("stars");
+  if(st){ const parts=(st[1]||"").split(",").filter(Boolean),bad=[],noown=[];
+    parts.forEach(x=>{const [k,v]=x.split(":");if(!itemOk(+k)||!/^[1-5]$/.test(v||""))bad.push(x);else if(!own.has(+k))noown.push(k)});
+    if(bad.length) add("error","Invalid star entries",`Star level must be 1 to 5 on a real item: ${bad.slice(0,6).join(", ")}${bad.length>6?", …":""}.`,"Remove them",()=>{const m={};(rec("stars")[1]||"").split(",").filter(Boolean).forEach(x=>{const [k,v]=x.split(":");if(itemOk(+k)&&/^[1-5]$/.test(v||""))m[+k]=+v});putStars(m)});
+    if(noown.length) add("warn","Stars on gear you have not unlocked",`${noown.length} item(s) have star levels but are not in your unlocked gear.`,"Remove those stars",()=>{const o=ownedItems(),m=starMap();Object.keys(m).forEach(k=>{if(!o.has(+k))delete m[k]});putStars(m)});
+  }
+  L.filter(l=>l.startsWith("equip|")).forEach(l=>{const p=l.split("|"),c=+p[1];if(!CLS_ORDER.includes(c))return;
+    const bad=[],miss=[];(p[2]||"").split(",").filter(Boolean).forEach(x=>{const [s,id]=x.split(":");if(!/^\d+$/.test(s||"")||!itemOk(+id)||Math.floor(+id/1000)%100!==c)bad.push(x);else if(!own.has(+id))miss.push(id)});
+    if(bad.length) add("error",`${CLASS_NAMES[c]}: invalid equipped item`,`Equipped entries that are not valid gear for this class: ${bad.join(", ")}.`,"Remove them",()=>{const i=find("equip",c),q=L[i].split("|");q[2]=(q[2]||"").split(",").filter(x=>{const [s,id]=x.split(":");return /^\d+$/.test(s||"")&&itemOk(+id)&&Math.floor(+id/1000)%100===c}).join(",");L[i]=q.join("|")});
+    if(miss.length) add("warn",`${CLASS_NAMES[c]}: equipped gear is not unlocked`,`${miss.length} equipped item(s) are not in the unlocked gear list.`,"Unlock them",()=>{const o=ownedItems();miss.forEach(x=>o.add(+x));putItems(o)});
+  });
+  // 8. totals, perks
+  const sr=rec("stat");
+  if(sr){const bad=kvParse(sr[1]||"").filter(([k,v])=>!nn(v)||!STAT_LABELS[k]);
+    if(bad.length) add("warn","Totals contain odd values",`These totals are not whole numbers or not known: ${bad.map(([k,v])=>k+"="+v).join(", ")}.`,"Fix numbers (negative or broken become 0)",()=>{const q=rec("stat");q[1]=kvParse(q[1]).filter(([k])=>STAT_LABELS[k]).map(([k,v])=>`${k}=${nn(v)?v:"0"}`).join(",");setRec("stat",undefined,q)})}
+  const pr=rec("perk");
+  if(pr){const bad=[],over=[];kvParse(pr[1]||"").forEach(([k,v])=>{if(!(k in PERKMAX))bad.push(k);else if(!nn(v)||+v>PERKMAX[k])over.push(`${k} ${v}/${PERKMAX[k]}`)});
+    if(bad.length) add("warn","Unknown perks",`The editor does not know these perks (they may be new in a game update): ${bad.join(", ")}.`,null,null);
+    if(over.length) add("error","Perk levels above their maximum",`Over the limit or not a number: ${over.join(", ")}.`,"Set them to the maximum",()=>{const q=rec("perk");q[1]=kvParse(q[1]).map(([k,v])=>`${k}:${k in PERKMAX&&(!nn(v)||+v>PERKMAX[k])?PERKMAX[k]:v}`).join(",");setRec("perk",undefined,q)})}
+  // 9. collections
+  [["pets",PETS,"pet"],["tabard",TABARDS,"tabard"],["races",RACES,"race"]].forEach(([k,map,nm])=>{const r=rec(k);if(!r)return;const bad=(r[1]||"").split(",").filter(Boolean).filter(x=>!(x in map));
+    if(bad.length) add("warn",`Unknown ${nm}s`,`These ${nm} ids are not known: ${bad.join(", ")}.`,"Remove them",()=>{const q=rec(k);q[1]=(q[1]||"").split(",").filter(x=>x in map).join(",");if(q[1])setRec(k,undefined,q);else removeLine(k)})});
+  const ach=rec("ach"),aset=new Set((ach&&ach[1]||"").split(",").filter(Boolean)),known=new Set(ACHS.map(a=>a[0]));
+  const ba=[...aset].filter(x=>!known.has(x));
+  if(ba.length) add("warn","Unknown achievements",`These achievements are not known to this editor (maybe new in a game update, maybe typos): ${ba.join(", ")}.`,"Remove them",()=>{const q=rec("ach");q[1]=q[1].split(",").filter(x=>known.has(x)).join(",");setRec("ach",undefined,q)});
+  const at=rec("achat");
+  if(at){const bad=kvEq(at[1]||"").filter(([k,v])=>!aset.has(k)||!nn(v));
+    if(bad.length) add("warn","Achievement dates do not match",`Dates for achievements you do not have, or with broken dates: ${bad.map(x=>x[0]).join(", ")}.`,"Remove those dates",()=>{const q=rec("achat"),a=new Set((rec("ach")||["",""])[1].split(","));q[1]=kvEq(q[1]).filter(([k,v])=>a.has(k)&&nn(v)).map(([k,v])=>k+"="+v).join(",");setRec("achat",undefined,q)})}
+  const se=rec("seen");
+  if(se){const ck=new Set(codexKeys().map(x=>x[0])),bad=kvEq(se[1]||"").filter(([k,v])=>!ck.has(k)||!/^[0-4]$/.test(v));
+    if(bad.length) add("warn","Codex entries not recognised",`${bad.length} codex entr${bad.length>1?"ies are":"y is"} unknown or have a rarity outside 0 to 4 (${bad.slice(0,5).map(x=>x[0]).join(", ")}${bad.length>5?", …":""}).`,"Remove them",()=>{const q=rec("seen"),k2=new Set(codexKeys().map(x=>x[0]));q[1]=kvEq(q[1]).filter(([k,v])=>k2.has(k)&&/^[0-4]$/.test(v)).map(([k,v])=>k+"="+v).join(",");setRec("seen",undefined,q)})}
+  const gl=rec("glow");
+  if(gl){const id=+gl[2];
+    if(!GLOWS.some(g=>g[0]===id)) add("warn","Unknown weapon glow",`Glow id ${gl[2]} is not a known glow.`,"Set to None",()=>{const q=rec("glow");q[2]="0";setRec("glow",undefined,q)});
+    else if(GLOW_NEEDS[id]&&!aset.has(GLOW_NEEDS[id])) add("warn","Weapon glow is not unlocked",`${GLOWS.find(g=>g[0]===id)[1]} needs the achievement “${(ACHS.find(a=>a[0]===GLOW_NEEDS[id])||[])[1]}”, which this save does not have.`,"Unlock the achievement",()=>{const s=achSet();s.add(GLOW_NEEDS[id]);putAch(s)})}
+  const pt=rec("pity");
+  if(pt){const bad=(pt[1]||"").split(",").filter(Boolean).filter(x=>!/^\d+:\d+$/.test(x));
+    if(bad.length) add("warn","Broken pity counters",`Entries should look like id:number: ${bad.join(", ")}.`,"Remove them",()=>{const q=rec("pity");q[1]=q[1].split(",").filter(x=>/^\d+:\d+$/.test(x)).join(",");setRec("pity",undefined,q)})}
+  return out;
+}
+let chkIssues=[];
+function showCheck(issues,fromSave){
+  chkIssues=issues; const d=$("chkdlg");
+  const e=issues.filter(i=>i.sev==="error").length,w=issues.length-e;
+  $("chkhead").textContent=issues.length?`${issues.length} problem${issues.length>1?"s":""} found (${e} serious, ${w} warning${w===1?"":"s"})`:"No problems found";
+  $("chkintro").textContent=issues.length?"The save has values the game may not accept. Pick what to fix; fixes are tick-boxes so you stay in control. Serious problems can make the game ignore parts of the save or fail to load it.":"Every value in this save looks valid.";
+  $("chklist").innerHTML=issues.map((i,n)=>`<li class="${i.sev}"><label><input type="checkbox" data-n="${n}"${i.fix?" checked":" disabled"}> <b>${i.sev==="error"?"Serious":"Warning"} · ${escapeHtml(i.title)}</b></label><div class="cd">${escapeHtml(i.detail)}</div><div class="cr">${i.fix?"Recommended fix: "+escapeHtml(i.fixLabel):"No automatic fix (check it yourself)."}</div></li>`).join("");
+  $("chkfix").classList.toggle("hide",!issues.some(i=>i.fix));
+  $("chkgo").textContent=fromSave?(issues.length?"Download without fixing":"Download"):"Close";
+  $("chkgo").dataset.save=fromSave?"1":"";
+  d.showModal();
+}
+function runFixes(){ const picked=[...$("chklist").querySelectorAll("input:checked")].map(x=>chkIssues[+x.dataset.n]); picked.forEach(i=>{try{i.fix()}catch(e){}}); render(); return picked.length }
+
 /* ---------- wiring ---------- */
 const drop=$("loader"), fileInput=$("file");
 drop.addEventListener("click",()=>fileInput.click());
@@ -767,6 +825,10 @@ $("applyRaw").addEventListener("click",()=>{
   L=$("raw").value.replace(/\r\n/g,'\n').split('\n'); const pr=validate();
   $("rawMsg").textContent=pr.length?pr[0]:"Applied."; render();
 });
+$("checkbtn").addEventListener("click",()=>showCheck(checkSave(),false));
+$("chkcancel").addEventListener("click",()=>$("chkdlg").close());
+$("chkfix").addEventListener("click",()=>{runFixes();$("chkdlg").close();const rest=checkSave();if(rest.length)showCheck(rest,true);else doDownload()});
+$("chkgo").addEventListener("click",()=>{$("chkdlg").close();if($("chkgo").dataset.save)doDownload()});
 $("save").addEventListener("click",download);
 $("reload").addEventListener("click",()=>{$("editor").classList.add("hide");$("loader").classList.remove("hide");fileInput.value="";$("hint").textContent=""});
 </script>
